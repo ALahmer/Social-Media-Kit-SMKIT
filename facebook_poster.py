@@ -33,8 +33,9 @@ def refresh_access_token(facebook_app_id, facebook_app_secret, short_lived_token
 
 
 class PostOnFacebook:
-    def __init__(self, topic):
+    def __init__(self, topic, image_path=None):
         self.topic = topic
+        self.image_path = image_path
 
     def execute(self):
         print(f"Post to be posted on Facebook about {self.topic}")
@@ -66,9 +67,17 @@ class PostOnFacebook:
         message = f"Hello, world! This is a post about {self.topic}.\n[{timestamp}]"
 
         # Post the message to your page
-        try:
-            post = graph.put_object(parent_object='me', connection_name='feed', message=message)
-            # Print the post ID
-            print(f"Successfully posted with post ID: {post['id']}")
-        except facebook.GraphAPIError as e:
-            print(f"An error occurred: {e}")
+        if self.image_path:
+            try:
+                with open(self.image_path, 'rb') as image:
+                    post = graph.put_photo(image=image, message=message)
+                    print(f"Successfully posted with post ID: {post['post_id']}")
+            except facebook.GraphAPIError as e:
+                print(f"An error occurred: {e}")
+        else:
+            try:
+                post = graph.put_object(parent_object='me', connection_name='feed', message=message)
+                # Print the post ID
+                print(f"Successfully posted with post ID: {post['id']}")
+            except facebook.GraphAPIError as e:
+                print(f"An error occurred: {e}")

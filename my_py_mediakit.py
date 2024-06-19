@@ -19,6 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description='Command-line interface example')
     parser.add_argument('command', choices=['facebook', 'twitter'], help='Where to post')
     parser.add_argument('topic', help='Topic to post about')
+    parser.add_argument('--image', help='Path to image to post', default=None)
     args = parser.parse_args()
 
     invoker = CommandInvoker()
@@ -27,9 +28,9 @@ def main():
         if not check_access_token():
             start_flask_app()
             input("Press Enter after completing authentication in the browser...")
-        command = PostOnFacebook(args.topic)
+        command = PostOnFacebook(args.topic, args.image)
     elif args.command == 'twitter':
-        command = PostOnTwitter(args.topic)
+        command = PostOnTwitter(args.topic, args.image)
 
     invoker.add_command(command)
     invoker.execute_commands()
