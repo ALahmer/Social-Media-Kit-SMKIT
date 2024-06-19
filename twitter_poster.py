@@ -1,6 +1,6 @@
 import tweepy
 from datetime import datetime
-from env_management import load_encrypted_env
+from env_management import load_from_env
 
 
 class PostOnTwitter:
@@ -12,7 +12,7 @@ class PostOnTwitter:
         self.post()
 
     def post(self):
-        env_data = load_encrypted_env()
+        env_data = load_from_env()
         if not env_data or not all(k in env_data for k in ('twitter_api_key', 'twitter_api_secret_key', 'twitter_access_token', 'twitter_access_token_secret')):
             print("Twitter credentials not found. Please add them to env.json.")
             return

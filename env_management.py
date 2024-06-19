@@ -1,37 +1,24 @@
 import json
-from cryptography.fernet import Fernet
 
 
-env_file = 'env.json.enc'
+env_file = 'env.json'
 
 
-def load_key():
-    return open("secret.key", "rb").read()
-
-
-def decrypt_data(encrypted_data, key):
-    f = Fernet(key)
-    decrypted_data = f.decrypt(encrypted_data).decode()
-    return decrypted_data
-
-
-def encrypt_data(data, key):
-    f = Fernet(key)
-    encrypted_data = f.encrypt(data.encode())
-    return encrypted_data
-
-
-def load_encrypted_env():
-    key = load_key()
-    with open(env_file, "rb") as file:
-        encrypted_data = file.read()
-    decrypted_data = decrypt_data(encrypted_data, key)
-    return json.loads(decrypted_data)
+def load_from_env():
+    try:
+        with open(env_file, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print("Environment file not found.")
+        return None
+    except json.JSONDecodeError:
+        print("Error decoding JSON from the environment file.")
+        return None
 
 
 def save_to_env(data):
-    key = load_key()
-    f = Fernet(key)
-    encrypted_data = f.encrypt(json.dumps(data).encode())
-    with open(env_file, 'wb') as file:
-        file.write(encrypted_data)
+    try:
+        with open(env_file, 'w') as f:
+            json.dump(data, f)
+    except Exception as e:
+        print(f"Error saving to env file: {e}")

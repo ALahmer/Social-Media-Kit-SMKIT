@@ -1,7 +1,7 @@
 import facebook
 from datetime import datetime
 import requests
-from env_management import load_encrypted_env, save_to_env
+from env_management import load_from_env, save_to_env
 
 
 def is_token_expired(access_token):
@@ -41,7 +41,7 @@ class PostOnFacebook:
         self.post()
 
     def post(self):
-        env_data = load_encrypted_env()
+        env_data = load_from_env()
         if not env_data or 'page_access_token' not in env_data:
             print("Access token not found. Please authenticate first.")
             return

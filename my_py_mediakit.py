@@ -1,17 +1,19 @@
 import argparse
 import subprocess
 from command_invoker import CommandInvoker
-from facebook_poster import PostOnFacebook, load_encrypted_env
+from facebook_poster import PostOnFacebook, load_from_env
 from twitter_poster import PostOnTwitter
-import os
+
 
 def check_access_token():
-    env_data = load_encrypted_env()
+    env_data = load_from_env()
     return env_data and 'page_access_token' in env_data and env_data['page_access_token']
+
 
 def start_flask_app():
     print("Starting Flask server for authentication...")
     subprocess.Popen(['python', 'app.py'])
+
 
 def main():
     parser = argparse.ArgumentParser(description='Command-line interface example')
@@ -31,6 +33,7 @@ def main():
 
     invoker.add_command(command)
     invoker.execute_commands()
+
 
 if __name__ == "__main__":
     main()

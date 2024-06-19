@@ -1,13 +1,13 @@
 from flask import Flask, request, redirect, session, url_for
 import requests
 import facebook
-from env_management import load_encrypted_env, save_to_env
+from env_management import load_from_env, save_to_env
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with your own secret key
 
 
-env_data = load_encrypted_env()
+env_data = load_from_env()
 facebook_app_id = env_data['facebook_app_id']
 facebook_app_secret = env_data['facebook_app_secret']
 facebook_redirect_uri = env_data['facebook_redirect_uri']
