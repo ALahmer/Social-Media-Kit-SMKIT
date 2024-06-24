@@ -1,8 +1,10 @@
 import argparse
 import subprocess
 from command_invoker import CommandInvoker
-from facebook_poster import PostOnFacebook, load_from_env
+from facebook_poster import PostOnFacebook
+from env_management import load_from_env
 from twitter_poster import PostOnTwitter
+from negapedia_connector import get_negapedia_url
 
 
 def check_access_token():
@@ -21,6 +23,14 @@ def main():
     parser.add_argument('topic', help='Topic to post about')
     parser.add_argument('--image', help='Path to image to post', default=None)
     args = parser.parse_args()
+
+    # Get the Negapedia URL
+    try:
+        negapedia_url = get_negapedia_url(args.topic)
+        print(f"Negapedia URL for {args.topic}: {negapedia_url}")
+    except Exception as e:
+        print(f"Failed to get Negapedia URL: {e}")
+        return
 
     invoker = CommandInvoker()
 
