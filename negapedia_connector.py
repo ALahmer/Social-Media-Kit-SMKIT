@@ -123,14 +123,15 @@ def convert_negaranks_to_dicts(negaranks_string):
     for negaranks_record in negaranks_records:
         negaranks_record = negaranks_record.lstrip('[')
         splitted_negaranks_record = negaranks_record.split(',')
-        negaranks_dict = {
-            "value1": splitted_negaranks_record[0],
-            "value2": splitted_negaranks_record[1],
-            "value3": splitted_negaranks_record[2],
-            "category": splitted_negaranks_record[3],
-            "type1": splitted_negaranks_record[4],
-            "year": splitted_negaranks_record[5],
-            "value4": splitted_negaranks_record[6]
-        }
-        negaranks_list.append(negaranks_dict)
+        if splitted_negaranks_record[5] != '"all"':
+            negaranks_dict = {
+                "value1": splitted_negaranks_record[0],
+                "value2": splitted_negaranks_record[1],
+                "value3": splitted_negaranks_record[2],
+                "category": splitted_negaranks_record[3],
+                "type1": splitted_negaranks_record[4],
+                "year": int( str(splitted_negaranks_record[5]).replace("\"", "") ),
+                "value4": float( str(splitted_negaranks_record[6]).replace("\"", "").replace("]", "").replace("[", "") )
+            }
+            negaranks_list.append(negaranks_dict)
     return negaranks_list
