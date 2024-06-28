@@ -4,9 +4,9 @@ from env_management import load_from_env
 
 
 class PostOnTwitter:
-    def __init__(self, topic, images_path=None):
+    def __init__(self, topic, images_paths=None):
         self.topic = topic
-        self.images_path = images_path
+        self.images_paths = images_paths
 
     def execute(self):
         print(f"Post to be posted on Twitter about {self.topic}")
@@ -36,19 +36,23 @@ class PostOnTwitter:
         timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         message = f"This is a tweet about {self.topic}.\n[{timestamp}]"
 
-        if self.images_path:
+        if self.images_paths:
             media_ids = []
-            for image_path in self.images_path:
+            for image_path in self.images_paths:
                 try:
                     media = api.media_upload(image_path)
                     media_ids.append(media.media_id_string)
                 except tweepy.TweepyException as e:
-                    print(f"An error occurred while uploading the image: {e}")
-            try:
-                client.create_tweet(text=message, media_ids=media_ids)
-                print("Successfully posted the tweet with image.")
-            except tweepy.TweepyException as e:
-                print(f"An error occurred: {e}")
+                    print(f"An error occurred while uploading image {image_path}: {e}")
+
+            if media_ids:
+                try:
+                    client.create_tweet(text=message, media_ids=media_ids)
+                    print("Successfully posted the tweet with image.")
+                except tweepy.TweepyException as e:
+                    print(f"An error occurred while creating the tweet: {e}")
+            else:
+                print("No images were uploaded. Post was not created.")
         else:
             try:
                 client.create_tweet(text=message)

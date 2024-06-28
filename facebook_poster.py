@@ -33,9 +33,9 @@ def refresh_access_token(facebook_app_id, facebook_app_secret, short_lived_token
 
 
 class PostOnFacebook:
-    def __init__(self, topic, image_path=None):
+    def __init__(self, topic, images_paths=None):
         self.topic = topic
-        self.image_path = image_path
+        self.images_paths = images_paths
 
     def execute(self):
         print(f"Post to be posted on Facebook about {self.topic}")
@@ -67,13 +67,28 @@ class PostOnFacebook:
         message = f"Hello, world! This is a post about {self.topic}.\n[{timestamp}]"
 
         # Post the message to your page
-        if self.image_path:
-            try:
-                with open(self.image_path, 'rb') as image:
-                    post = graph.put_photo(image=image, message=message)
-                    print(f"Successfully posted with post ID: {post['post_id']}")
-            except facebook.GraphAPIError as e:
-                print(f"An error occurred: {e}")
+        if self.images_paths:
+            media_ids = []
+            for image_path in self.images_paths:
+                try:
+                    with open(image_path, 'rb') as image:
+                        media = graph.put_photo(image=image, published=False)
+                        media_ids.append(media['id'])
+                except facebook.GraphAPIError as e:
+                    print(f"An error occurred while uploading image {image_path}: {e}")
+
+            if media_ids:
+                try:
+                    args = {"message": message}
+                    for idx, media_id in enumerate(media_ids):
+                        args[f"attached_media[{idx}]"] = f'{{"media_fbid":"{media_id}"}}'
+
+                    post = graph.request(path='/me/feed', args=args, method='POST')
+                    print(f"Successfully posted with post ID: {post['id']}")
+                except facebook.GraphAPIError as e:
+                    print(f"An error occurred while creating the post: {e}")
+            else:
+                print("No images were uploaded. Post was not created.")
         else:
             try:
                 post = graph.put_object(parent_object='me', connection_name='feed', message=message)

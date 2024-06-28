@@ -127,9 +127,9 @@ def main():
 
     # Plotting the data
     categories = ["conflict", "polemic"]
-    plots_path = []
+    plots_paths = []
     for category in categories:
-        plot_negaraks_data_copilot(category, args.topics, topics_data_array, plots_path)
+        plot_negaraks_data_copilot(category, args.topics, topics_data_array, plots_paths)
 
 
     invoker = CommandInvoker()
@@ -138,9 +138,9 @@ def main():
         if not check_access_token():
             start_flask_app()
             input("Press Enter after completing authentication in the browser...")
-        command = PostOnFacebook(args.topics, args.image)
+        command = PostOnFacebook(args.topics, plots_paths)
     elif args.command == 'twitter':
-        command = PostOnTwitter(args.topics, plots_path)
+        command = PostOnTwitter(args.topics, plots_paths)
 
     invoker.add_command(command)
     invoker.execute_commands()
