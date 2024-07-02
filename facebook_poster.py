@@ -63,8 +63,14 @@ class PostOnFacebook:
         graph = facebook.GraphAPI(access_token)
 
         timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        # Prepare your post
-        message = f"Hello, world! This is a post about {self.topic}.\n[{timestamp}]"
+        # Prepare post
+        if len(self.topic) == 1:
+            topics_str = self.topic[0]
+        elif len(self.topic) == 2:
+            topics_str = " and ".join(self.topic)
+        else:
+            topics_str = ", ".join(self.topic[:-1]) + ", and " + self.topic[-1]
+        message = f"This is a post about {topics_str}.\n[{timestamp}]"
 
         # Post the message to your page
         if self.images_paths:

@@ -34,7 +34,14 @@ class PostOnTwitter:
         )
 
         timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        message = f"This is a tweet about {self.topic}.\n[{timestamp}]"
+        # Prepare tweet
+        if len(self.topic) == 1:
+            topics_str = self.topic[0]
+        elif len(self.topic) == 2:
+            topics_str = " and ".join(self.topic)
+        else:
+            topics_str = ", ".join(self.topic[:-1]) + ", and " + self.topic[-1]
+        message = f"This is a tweet about {topics_str}.\n[{timestamp}]"
 
         if self.images_paths:
             media_ids = []

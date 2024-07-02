@@ -137,8 +137,8 @@ def convert_negaranks_to_dicts(negaranks_string):
                 "value3": splitted_negaranks_record[2],
                 "category": splitted_negaranks_record[3],
                 "type1": splitted_negaranks_record[4],
-                "year": int( str(splitted_negaranks_record[5]).replace("\"", "") ),
-                "value4": float( str(splitted_negaranks_record[6]).replace("\"", "").replace("]", "").replace("[", "") )
+                "year": int(str(splitted_negaranks_record[5]).replace("\"", "")),
+                "value4": float(str(splitted_negaranks_record[6]).replace("\"", "").replace("]", "").replace("[", ""))
             }
             negaranks_list.append(negaranks_dict)
     return negaranks_list
@@ -161,7 +161,7 @@ def plot_negaraks_data_copilot(category, topics, topics_data_array, plots_path):
     data_to_plot = extract_data(topics_data_array, category)
 
     # Define a color map for topics
-    colors = ["brown", "black", "green", "red", "red", "blue"]
+    colors = ["brown", "black", "yellow", "blue", "green", "red"]
     topic_colors = dict()
     for topic in data_to_plot:
         color = colors.pop()
@@ -209,7 +209,7 @@ def plot_negaraks_data_copilot(category, topics, topics_data_array, plots_path):
 
     # Save the plot as a PNG file
     timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
-    output_filename = title_plot.replace(" ", "_") + "_" + timestamp + ".png"
+    output_filename = title_plot.replace(" ", "_").replace(",", "") + "_" + timestamp + ".png"
     output_path = os.path.join('images_to_post', output_filename)
     plt.savefig(output_path)
 
