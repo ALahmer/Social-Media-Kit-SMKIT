@@ -132,27 +132,31 @@ def convert_negaranks_to_dicts(negaranks_string):
         splitted_negaranks_record = negaranks_record.split(',')
         if splitted_negaranks_record[5] != '"all"':
             negaranks_dict = {
-                "value1": splitted_negaranks_record[0],
-                "value2": splitted_negaranks_record[1],
-                "value3": splitted_negaranks_record[2],
-                "category": splitted_negaranks_record[3],
-                "type1": splitted_negaranks_record[4],
-                "year": int(str(splitted_negaranks_record[5]).replace("\"", "")),
-                "value4": float(str(splitted_negaranks_record[6]).replace("\"", "").replace("]", "").replace("[", ""))
+                "rank": int(splitted_negaranks_record[0]),
+                "perc": int(splitted_negaranks_record[1]),
+                "dperc": int(splitted_negaranks_record[2]),
+                "type": str(splitted_negaranks_record[3]).replace("\"", ""),
+                "topic": str(splitted_negaranks_record[4]).replace("\"", ""),
+                "period": int(str(splitted_negaranks_record[5]).replace("\"", "")),
+                "measurement_value": float(str(splitted_negaranks_record[6]).replace("\"", "").replace("]", "").replace("[", ""))
             }
             negaranks_list.append(negaranks_dict)
     return negaranks_list
 
 
+def filter_useful_negaranks_data(negapedia_data):
+    current_year = datetime.now().year
+    return [entry for entry in negapedia_data if entry['topic'] == 'all' and entry['period'] != current_year]
+
+
 def extract_data(topics_data_array, category):
     data_to_plot = dict()
-    category_param = '"' + category + '"'
     for topic in topics_data_array:
         data_to_plot[topic] = dict()
-        data_to_plot[topic]["years"] = [entry["year"] for entry in topics_data_array[topic] if
-                                        entry['category'] != category_param]
-        data_to_plot[topic]["values"] = [entry["value4"] for entry in topics_data_array[topic] if
-                                         entry['category'] != category_param]
+        data_to_plot[topic]["years"] = [entry["period"] for entry in topics_data_array[topic] if
+                                        entry['type'] != category]
+        data_to_plot[topic]["values"] = [entry["measurement_value"] for entry in topics_data_array[topic] if
+                                         entry['type'] != category]
     return data_to_plot
 
 

@@ -41,7 +41,7 @@ class PostOnTwitter:
             topics_str = " and ".join(self.topic)
         else:
             topics_str = ", ".join(self.topic[:-1]) + ", and " + self.topic[-1]
-        message = f"This is a tweet about {topics_str}.\n[{timestamp}]"
+        message = f"Comparison of conflict and polemic levels between topics {topics_str}"
 
         if self.images_paths:
             media_ids = []

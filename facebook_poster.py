@@ -62,7 +62,6 @@ class PostOnFacebook:
         # Initialize the Graph API with your access token
         graph = facebook.GraphAPI(access_token)
 
-        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         # Prepare post
         if len(self.topic) == 1:
             topics_str = self.topic[0]
@@ -70,7 +69,7 @@ class PostOnFacebook:
             topics_str = " and ".join(self.topic)
         else:
             topics_str = ", ".join(self.topic[:-1]) + ", and " + self.topic[-1]
-        message = f"This is a post about {topics_str}.\n[{timestamp}]"
+        message = f"Comparison of conflict and polemic levels between topics {topics_str}"
 
         # Post the message to your page
         if self.images_paths:

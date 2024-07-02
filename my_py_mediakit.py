@@ -4,7 +4,7 @@ from command_invoker import CommandInvoker
 from facebook_poster import PostOnFacebook
 from env_management import load_from_env
 from twitter_poster import PostOnTwitter
-from negapedia_connector import get_negapedia_url, get_negapedia_data_array, convert_negaranks_to_dicts, plot_negaraks_data_copilot
+import negapedia_connector
 
 
 def check_access_token():
@@ -28,16 +28,15 @@ def main():
     topics_data_array = dict()
     for topic in args.topics:
         try:
-            negapedia_url = get_negapedia_url(topic)
+            negapedia_url = negapedia_connector.get_negapedia_url(topic)
             topics_urls.append({topic: negapedia_url})
         except Exception as e:
             print(f"Failed to get Negapedia URL for topic={topic}: {e}")
             continue
         try:
-            negapedia_string_data = get_negapedia_data_array(negapedia_url)
-            negapedia_data = convert_negaranks_to_dicts(negapedia_string_data)
-            negapedia_data_filtered = [entry for entry in negapedia_data if entry['type1'] == '"all"']
-            topics_data_array[topic] = negapedia_data_filtered
+            negapedia_string_data = negapedia_connector.get_negapedia_data_array(negapedia_url)
+            negapedia_data = negapedia_connector.convert_negaranks_to_dicts(negapedia_string_data)
+            topics_data_array[topic] = negapedia_connector.filter_useful_negaranks_data(negapedia_data)
         except Exception as e:
             print(f"Failed to process NEGARANKS data management for topic={topic}: {e}")
             continue
@@ -46,7 +45,7 @@ def main():
     categories = ["conflict", "polemic"]
     plots_paths = []
     for category in categories:
-        plot_negaraks_data_copilot(category, args.topics, topics_data_array, plots_paths)
+        negapedia_connector.plot_negaraks_data_copilot(category, args.topics, topics_data_array, plots_paths)
 
 
     invoker = CommandInvoker()
