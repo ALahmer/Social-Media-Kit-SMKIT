@@ -12,6 +12,7 @@ from datetime import datetime
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import os
+import seaborn as sns
 
 
 def get_negapedia_url(topic):
@@ -164,27 +165,24 @@ def plot_negaraks_data_copilot(category, topics, topics_data_array, plots_path):
     # Extract data for plotting
     data_to_plot = extract_data(topics_data_array, category)
 
-    # Define a color map for topics
-    colors = ["brown", "black", "yellow", "blue", "green", "red"]
-    topic_colors = dict()
-    for topic in data_to_plot:
-        color = colors.pop()
-        topic_colors[topic] = color
+    # Define a color map for topics using seaborn color palette
+    colors = sns.color_palette("husl", len(data_to_plot))
+    topic_colors = {topic: colors[i] for i, topic in enumerate(data_to_plot)}
 
     # Create line plots
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(14, 8), dpi=100)
 
     for topic in data_to_plot:
         years_to_plot = data_to_plot[topic]["years"]
         values_to_plot = data_to_plot[topic]["values"]
         plot_label = topic
         plot_color = topic_colors[topic]
-        plt.plot(years_to_plot, values_to_plot, label=plot_label, color=plot_color, marker="o")
+        plt.plot(years_to_plot, values_to_plot, label=plot_label, color=plot_color, marker="o", linestyle='-')
 
     # Add labels and title
-    plt.xlabel("Year")
+    plt.xlabel("Year", fontsize=14)
     y_label = category + " level"
-    plt.ylabel(y_label)
+    plt.ylabel(y_label, fontsize=14)
 
     # Construct the title
     if len(topics) == 1:
@@ -195,11 +193,11 @@ def plot_negaraks_data_copilot(category, topics, topics_data_array, plots_path):
         topics_str = ", ".join(topics[:-1]) + ", and " + topics[-1]
 
     title_plot = "Comparison of " + category + " level between topics " + topics_str
-    plt.title(title_plot)
-    plt.legend()
+    plt.title(title_plot, fontsize=16)
+    plt.legend(fontsize=12)
 
     # Adjust x-axis and y-axis ticks
-    plt.grid(True)
+    plt.grid(True, linestyle='--', linewidth=0.5)
     max_x = max(max(data_to_plot[topic]["years"]) for topic in data_to_plot)
     min_x = min(min(data_to_plot[topic]["years"]) for topic in data_to_plot)
     max_y = max(max(data_to_plot[topic]["values"]) for topic in data_to_plot)
@@ -208,13 +206,14 @@ def plot_negaraks_data_copilot(category, topics, topics_data_array, plots_path):
     x_tick_step = 1
     y_tick_step = round(max_y / 10)
 
-    plt.xticks(range(min_x - 1, max_x + 1, x_tick_step))
-    plt.yticks(range(0, int(max_y) + 1, y_tick_step))
+    plt.xticks(range(min_x - 1, max_x + 1, x_tick_step), fontsize=12)
+    plt.yticks(range(0, int(max_y) + 1, y_tick_step), fontsize=12)
 
     # Save the plot as a PNG file
     timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
     output_filename = title_plot.replace(" ", "_").replace(",", "") + "_" + timestamp + ".png"
     output_path = os.path.join('images_to_post', output_filename)
+    plt.tight_layout()
     plt.savefig(output_path)
 
     plots_path.append( "images_to_post/" + output_filename )
