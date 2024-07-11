@@ -1,10 +1,13 @@
+from connectors.facebook_connector import check_access_token, post_on_facebook
+from connectors.twitter_connector import post_on_twitter
+from utils.app_management import start_flask_app
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
-from env_management import load_from_env
+from utils.env_management import load_from_env
 import matplotlib
 from datetime import datetime
 
@@ -13,6 +16,46 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import os
 import seaborn as sns
+
+def handle_negapedia_module(args):
+    print(f"Handling Negapedia module for topics {args.topics} and mode {args.mode}")
+    generate_negapedia_post(args.topics, args.post_type, args.mode)
+
+
+def generate_negapedia_post(topics, post_type, mode):
+    # Implement the logic to generate and post content specific to Negapedia
+    print(f"Generating Negapedia post for topics: {topics}, post_type: {post_type}, mode: {mode}")
+
+    topics_urls = []
+    topics_data_array = dict()
+    for topic in topics:
+        try:
+            negapedia_url = get_negapedia_url(topic)
+            topics_urls.append({topic: negapedia_url})
+        except Exception as e:
+            print(f"Failed to get Negapedia URL for topic={topic}: {e}")
+            continue
+        try:
+            negapedia_string_data = get_negapedia_data_array(negapedia_url)
+            negapedia_data = convert_negaranks_to_dicts(negapedia_string_data)
+            topics_data_array[topic] = filter_useful_negaranks_data(negapedia_data)
+        except Exception as e:
+            print(f"Failed to process NEGARANKS data management for topic={topic}: {e}")
+            continue
+
+    # Plotting the data
+    categories = ["conflict", "polemic"]
+    plots_paths = []
+    for category in categories:
+        plot_negaraks_data_copilot(category, topics, topics_data_array, plots_paths)
+
+    if post_type == 'facebook':
+        if not check_access_token():
+            start_flask_app()
+            input("Press Enter after completing authentication in the browser...")
+        post_on_facebook(topics, plots_paths)
+    elif post_type == 'twitter':
+        post_on_twitter(topics, plots_paths)
 
 
 def get_negapedia_url(topic):

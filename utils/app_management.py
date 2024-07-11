@@ -1,7 +1,8 @@
+import subprocess
 from flask import Flask, request, redirect, session, url_for
 import requests
 import facebook
-from env_management import load_from_env, save_to_env
+from utils.env_management import load_from_env, save_to_env
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with your own secret key
@@ -59,6 +60,9 @@ def get_page_access_token():
     else:
         return "No pages found."
 
+def start_flask_app():
+    print("Starting Flask server for authentication...")
+    subprocess.Popen(['python', 'app.py'])
 
 if __name__ == '__main__':
     app.run(debug=True)
