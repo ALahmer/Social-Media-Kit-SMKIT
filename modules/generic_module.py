@@ -13,6 +13,7 @@ def handle_generic_module(args):
     elif args.post_type.lower() == 'web':
         post_on_social_media('web', message)
 
+
 def post_on_social_media(platform, message, image_path=None):
     # Implement your logic to post on social media
     print(f"Posting on {platform} with message: {message} and image: {image_path}")

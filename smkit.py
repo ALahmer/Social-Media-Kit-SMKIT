@@ -2,6 +2,7 @@ import argparse
 from modules.negapedia_module import handle_negapedia_module
 from modules.generic_module import handle_generic_module
 
+
 def main():
     parser = argparse.ArgumentParser(description="Social Media Kit")
     parser.add_argument('--module', type=str, help='Specify the module (e.g., negapedia)')
@@ -28,6 +29,7 @@ def main():
             print("Url, Date, Language and Post Type are required for generic module posting.")
         else:
             handle_generic_module(args)
+
 
 if __name__ == "__main__":
     main()

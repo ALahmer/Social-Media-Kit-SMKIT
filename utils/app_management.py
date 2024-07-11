@@ -60,9 +60,11 @@ def get_page_access_token():
     else:
         return "No pages found."
 
+
 def start_flask_app():
     print("Starting Flask server for authentication...")
     subprocess.Popen(['python', 'app.py'])
+
 
 if __name__ == '__main__':
     app.run(debug=True)

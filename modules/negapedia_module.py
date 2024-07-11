@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import os
 import seaborn as sns
 
+
 def handle_negapedia_module(args):
     print(f"Handling Negapedia module for topics {args.topics} and mode {args.mode}")
     generate_negapedia_post(args.topics, args.post_type, args.mode)
@@ -259,7 +260,7 @@ def plot_negaraks_data_copilot(category, topics, topics_data_array, plots_path):
     plt.tight_layout()
     plt.savefig(output_path)
 
-    plots_path.append( "images_to_post/" + output_filename )
+    plots_path.append("images_to_post/" + output_filename)
 
     # Show the plot
     # plt.show()
