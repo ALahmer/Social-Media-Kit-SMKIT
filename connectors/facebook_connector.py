@@ -2,6 +2,7 @@ import facebook
 from datetime import datetime
 import requests
 from utils.env_management import load_from_env, save_to_env
+from utils.images_management import get_downloaded_image_path
 
 
 def check_access_token():
@@ -37,7 +38,7 @@ def refresh_access_token(facebook_app_id, facebook_app_secret, short_lived_token
         return None
 
 
-def post_on_facebook(topic, images_paths=None):
+def post_on_facebook(message, images_paths=None):
     env_data = load_from_env()
     if not env_data or 'page_access_token' not in env_data:
         print("Access token not found. Please authenticate first.")
@@ -58,21 +59,15 @@ def post_on_facebook(topic, images_paths=None):
     # Initialize the Graph API with your access token
     graph = facebook.GraphAPI(access_token)
 
-    # Prepare post
-    if len(topic) == 1:
-        topics_str = topic[0]
-    elif len(topic) == 2:
-        topics_str = " and ".join(topic)
-    else:
-        topics_str = ", ".join(topic[:-1]) + ", and " + topic[-1]
-    message = f"Comparison of conflict and polemic levels between topics {topics_str}"
-
     # Post the message to your page
     if images_paths:
         media_ids = []
         for image_path in images_paths:
             try:
-                with open(image_path, 'rb') as image:
+                image_path_src = image_path['src']
+                if image_path['location'] == "web":
+                    image_path_src = get_downloaded_image_path(image_path_src)
+                with open(image_path_src, 'rb') as image:
                     media = graph.put_photo(image=image, published=False)
                     media_ids.append(media['id'])
             except facebook.GraphAPIError as e:

@@ -1,8 +1,9 @@
 import tweepy
 from utils.env_management import load_from_env
+from utils.images_management import get_downloaded_image_path
 
 
-def post_on_twitter(topic, images_paths=None):
+def post_on_twitter(message, images_paths=None):
     env_data = load_from_env()
     if not env_data or not all(k in env_data for k in ('twitter_api_key', 'twitter_api_secret_key', 'twitter_access_token', 'twitter_access_token_secret')):
         print("Twitter credentials not found. Please add them to env.json.")
@@ -23,20 +24,14 @@ def post_on_twitter(topic, images_paths=None):
         access_token_secret=env_data['twitter_access_token_secret']
     )
 
-    # Prepare tweet
-    if len(topic) == 1:
-        topics_str = topic[0]
-    elif len(topic) == 2:
-        topics_str = " and ".join(topic)
-    else:
-        topics_str = ", ".join(topic[:-1]) + ", and " + topic[-1]
-    message = f"Comparison of conflict and polemic levels between topics {topics_str}"
-
     if images_paths:
         media_ids = []
         for image_path in images_paths:
             try:
-                media = api.media_upload(image_path)
+                image_path_src = image_path['src']
+                if image_path['location'] == "web":
+                    image_path_src = get_downloaded_image_path(image_path_src)
+                media = api.media_upload(image_path_src)
                 media_ids.append(media.media_id_string)
             except tweepy.TweepyException as e:
                 print(f"An error occurred while uploading image {image_path}: {e}")

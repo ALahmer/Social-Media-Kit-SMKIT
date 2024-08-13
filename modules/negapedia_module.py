@@ -1,5 +1,6 @@
 from connectors.facebook_connector import check_access_token, post_on_facebook
 from connectors.twitter_connector import post_on_twitter
+from connectors.web_connector import post_on_web
 from utils.app_management import start_flask_app
 import time
 from selenium import webdriver
@@ -19,44 +20,97 @@ import seaborn as sns
 
 
 def handle_negapedia_module(args):
-    print(f"Handling Negapedia module for topics {args.topics} and mode {args.mode}")
-    generate_negapedia_post(args.topics, args.post_type, args.mode)
+    if not args.urls or not args.post_type or not args.mode:
+        print("URLs, Post Type and Mode are required for negapedia module posting.")
+        return
+    else:
+        if args.mode == "comparison":
+            print(f"Handling Negapedia module for URLs {args.urls} and mode {args.mode}")
+            generate_comparison_negapedia_post(args.urls, args.post_type, args.mode)
+        elif args.mode == "summary":
+            print(f"Handling Negapedia module for URLs {args.urls} and mode {args.mode}")
+            generate_summary_negapedia_post(args.urls, args.post_type, args.mode)
 
 
-def generate_negapedia_post(topics, post_type, mode):
+def generate_comparison_negapedia_post(urls, post_type, mode):
     # Implement the logic to generate and post content specific to Negapedia
-    print(f"Generating Negapedia post for topics: {topics}, post_type: {post_type}, mode: {mode}")
+    print(f"Generating Negapedia comparison post for URLs: {urls}, post_type: {post_type}, mode: {mode}")
 
-    topics_urls = []
     topics_data_array = dict()
-    for topic in topics:
+    for topic_url in urls:
         try:
-            negapedia_url = get_negapedia_url(topic)
-            topics_urls.append({topic: negapedia_url})
-        except Exception as e:
-            print(f"Failed to get Negapedia URL for topic={topic}: {e}")
-            continue
-        try:
-            negapedia_string_data = get_negapedia_data_array(negapedia_url)
+            negapedia_string_data = get_negapedia_data_array(topic_url)
             negapedia_data = convert_negaranks_to_dicts(negapedia_string_data)
-            topics_data_array[topic] = filter_useful_negaranks_data(negapedia_data)
+            topics_data_array[topic_url] = filter_useful_negaranks_data(negapedia_data)
         except Exception as e:
-            print(f"Failed to process NEGARANKS data management for topic={topic}: {e}")
+            print(f"Failed to process NEGARANKS data management for URL={topic_url}: {e}")
             continue
 
     # Plotting the data
     categories = ["conflict", "polemic"]
     plots_paths = []
     for category in categories:
-        plot_negaraks_data_copilot(category, topics, topics_data_array, plots_paths)
+        plot_negaraks_data_copilot(category, urls, topics_data_array, plots_paths)
+
+    # Prepare post
+    if len(urls) == 1:
+        topics_str = urls[0]
+    elif len(urls) == 2:
+        topics_str = " and ".join(urls)
+    else:
+        topics_str = ", ".join(urls[:-1]) + ", and " + urls[-1]
+    message = f"Comparison of conflict and polemic levels between topics {topics_str}"
+    title = message
 
     if post_type == 'facebook':
         if not check_access_token():
             start_flask_app()
             input("Press Enter after completing authentication in the browser...")
-        post_on_facebook(topics, plots_paths)
+        post_on_facebook(message, plots_paths)
     elif post_type == 'twitter':
-        post_on_twitter(topics, plots_paths)
+        post_on_twitter(message, plots_paths)
+    elif post_type == 'web':
+        post_on_web(title, message, plots_paths, 'comparison')
+
+
+def generate_summary_negapedia_post(urls, post_type, mode):
+    print(f"Generating Negapedia summary post for URLs: {urls}, post_type: {post_type}, mode: {mode}")
+
+    topics_data_array = dict()
+    for topic_url in urls:
+        try:
+            negapedia_string_data = get_negapedia_data_array(topic_url)
+            negapedia_data = convert_negaranks_to_dicts(negapedia_string_data)
+            topics_data_array[topic_url] = filter_useful_negaranks_data(negapedia_data)
+        except Exception as e:
+            print(f"Failed to process NEGARANKS data management for URL={topic_url}: {e}")
+            continue
+
+    # Plotting the data
+    categories = ["conflict", "polemic"]
+    plots_paths = []
+    for category in categories:
+        plot_negaraks_data_copilot(category, urls, topics_data_array, plots_paths)
+
+    # Prepare post
+    if len(urls) == 1:
+        topics_str = urls[0]
+    elif len(urls) == 2:
+        topics_str = " and ".join(urls)
+    else:
+        topics_str = ", ".join(urls[:-1]) + ", and " + urls[-1]
+    message = f"Conflict and polemic levels for topic {topics_str}"
+    title = message
+
+    if post_type == 'facebook':
+        if not check_access_token():
+            start_flask_app()
+            input("Press Enter after completing authentication in the browser...")
+        post_on_facebook(message, plots_paths)
+    elif post_type == 'twitter':
+        post_on_twitter(message, plots_paths)
+    elif post_type == 'web':
+        post_on_web(title, message, plots_paths, 'summary')
 
 
 def get_negapedia_url(topic):
@@ -205,7 +259,7 @@ def extract_data(topics_data_array, category):
     return data_to_plot
 
 
-def plot_negaraks_data_copilot(category, topics, topics_data_array, plots_path):
+def plot_negaraks_data_copilot(category, urls, topics_data_array, plots_path):
     # Extract data for plotting
     data_to_plot = extract_data(topics_data_array, category)
 
@@ -229,14 +283,14 @@ def plot_negaraks_data_copilot(category, topics, topics_data_array, plots_path):
     plt.ylabel(y_label, fontsize=14)
 
     # Construct the title
-    if len(topics) == 1:
-        topics_str = topics[0]
-    elif len(topics) == 2:
-        topics_str = " and ".join(topics)
+    if len(urls) == 1:
+        topics_str = urls[0]
+    elif len(urls) == 2:
+        topics_str = " and ".join(urls)
     else:
-        topics_str = ", ".join(topics[:-1]) + ", and " + topics[-1]
+        topics_str = ", ".join(urls[:-1]) + ", and " + urls[-1]
 
-    title_plot = "Comparison of " + category + " level between topics " + topics_str
+    title_plot = "Comparison of " + category + " level between topics "
     plt.title(title_plot, fontsize=16)
     plt.legend(fontsize=12)
 
@@ -260,7 +314,11 @@ def plot_negaraks_data_copilot(category, topics, topics_data_array, plots_path):
     plt.tight_layout()
     plt.savefig(output_path)
 
-    plots_path.append("images_to_post/" + output_filename)
+    image = {
+        'location': "local",
+        'src': "images_to_post/" + output_filename
+    }
+    plots_path.append(image)
 
     # Show the plot
     # plt.show()

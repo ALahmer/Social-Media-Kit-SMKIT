@@ -163,3 +163,4 @@ env.json
 secret.key
 env.json.enc
 images_to_post/
+pages_to_post/
