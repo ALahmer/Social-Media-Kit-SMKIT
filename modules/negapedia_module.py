@@ -62,15 +62,16 @@ def generate_comparison_negapedia_post(urls, post_type, mode):
     message = f"Comparison of conflict and polemic levels between topics {topics_str}"
     title = message
 
-    if post_type == 'facebook':
-        if not check_access_token():
-            start_flask_app()
-            input("Press Enter after completing authentication in the browser...")
-        post_on_facebook(message, plots_paths)
-    elif post_type == 'twitter':
-        post_on_twitter(message, plots_paths)
-    elif post_type == 'web':
-        post_on_web(title, message, plots_paths, 'comparison')
+    for posting_channel in post_type:
+        if posting_channel == 'facebook':
+            if not check_access_token():
+                start_flask_app()
+                input("Press Enter after completing authentication in the browser...")
+            post_on_facebook(message, plots_paths)
+        elif posting_channel == 'twitter':
+            post_on_twitter(message, plots_paths)
+        elif posting_channel == 'web':
+            post_on_web(title, message, plots_paths, 'comparison')
 
 
 def generate_summary_negapedia_post(urls, post_type, mode):
@@ -102,15 +103,16 @@ def generate_summary_negapedia_post(urls, post_type, mode):
     message = f"Conflict and polemic levels for topic {topics_str}"
     title = message
 
-    if post_type == 'facebook':
-        if not check_access_token():
-            start_flask_app()
-            input("Press Enter after completing authentication in the browser...")
-        post_on_facebook(message, plots_paths)
-    elif post_type == 'twitter':
-        post_on_twitter(message, plots_paths)
-    elif post_type == 'web':
-        post_on_web(title, message, plots_paths, 'summary')
+    for posting_channel in post_type:
+        if posting_channel == 'facebook':
+            if not check_access_token():
+                start_flask_app()
+                input("Press Enter after completing authentication in the browser...")
+            post_on_facebook(message, plots_paths)
+        elif posting_channel == 'twitter':
+            post_on_twitter(message, plots_paths)
+        elif posting_channel == 'web':
+            post_on_web(title, message, plots_paths, 'summary')
 
 
 def get_negapedia_url(topic):

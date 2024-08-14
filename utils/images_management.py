@@ -19,3 +19,4 @@ def get_downloaded_image_path(image_path_src):
         timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
         image_path_src = "images_to_post/temp_image_" + timestamp + ".jpg"
         img.save(image_path_src)
+    return image_path_src

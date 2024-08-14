@@ -8,3 +8,4 @@ DateTime~=5.0
 argparse~=1.4.0
 tweepy~=4.14.0
 facebook-sdk~=3.1.0
+Pillow~=9.2.0

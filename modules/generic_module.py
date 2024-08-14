@@ -31,12 +31,13 @@ def generate_generic_post(urls, post_type):
         }
         images_urls.append(image)
 
-        if post_type == 'facebook':
-            post_on_facebook(message, images_urls)
-        elif post_type == 'twitter':
-            post_on_twitter(message, images_urls)
-        elif post_type == 'web':
-            post_on_web(title, message, images_urls, 'summary')
+        for posting_channel in post_type:
+            if posting_channel == 'facebook':
+                post_on_facebook(message, images_urls)
+            elif posting_channel == 'twitter':
+                post_on_twitter(message, images_urls)
+            elif posting_channel == 'web':
+                post_on_web(title, message, images_urls, 'summary')
 
 
 def fetch_page_content(url):
