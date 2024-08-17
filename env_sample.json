@@ -9,5 +9,7 @@
   "twitter_access_token_secret": "",
   "twitter_api_key_OAuth_2_0": "",
   "twitter_api_secret_key_OAuth_2_0": "",
-  "chromedriver_path": "C:\\Program Files\\Google\\ChromeDriver\\chromedriver.exe"
+  "chromedriver_path": "C:\\Program Files\\Google\\ChromeDriver\\chromedriver.exe",
+  "filesystem_website_base_directory": "/var/www/negapedia/en/html",
+  "website_base_url": "http://en.negapedia.org"
 }

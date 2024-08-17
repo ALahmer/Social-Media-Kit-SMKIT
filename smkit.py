@@ -10,10 +10,34 @@ def main():
     parser.add_argument('--post_type', nargs='+', type=str, choices=['twitter', 'facebook', 'web'], help='Specify the type of post')
     parser.add_argument('--message', type=str, help='Specify a custom message for the post')
     parser.add_argument('--language', type=str, help='Specify the language for the post (e.g., en, it)')
-    parser.add_argument('--urls', nargs='+', type=str, help='Specify the URLs to post about')
+    parser.add_argument('--pages', nargs='+', type=str, help='Specify the pages to post about')
     parser.add_argument('--date', type=str, help='Specify the date for filtering pages (YYYY-MM-DD)')
 
     args = parser.parse_args()
+
+    # args = {
+    #     "module": "negapedia",
+    #     "mode": "comparison",
+    #     "post_type": ["web"],
+    #     "message": None,
+    #     "language": None,
+    #     # "pages": [
+    #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/Barack_Obama.html.zip",
+    #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/Donald_Trump.html.zip",
+    #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/George_W._Bush.html.zip",
+    #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/Joe_Biden.html.zip"
+    #     # ],
+    #     "pages": [
+    #         "./virtual_local_server/var/www/negapedia/en/html"
+    #     ],
+    #     # "pages": [
+    #     #     "http://it.negapedia.org/articles/Donald_Trump",
+    #     #     "http://it.negapedia.org/articles/Joe_Biden",
+    #     #     "http://it.negapedia.org/articles/Barack_Obama"
+    #     # ],
+    #     "date": None
+    # }
+    # args = argparse.Namespace(**args)
 
     if args.module:
         if args.module.lower() == 'negapedia':

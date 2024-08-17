@@ -2,6 +2,7 @@ from connectors.facebook_connector import check_access_token, post_on_facebook
 from connectors.twitter_connector import post_on_twitter
 from connectors.web_connector import post_on_web
 from utils.app_management import start_flask_app
+from utils.input_validation_management import get_input_parameter_web_urls
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -20,24 +21,25 @@ import seaborn as sns
 
 
 def handle_negapedia_module(args):
-    if not args.urls or not args.post_type or not args.mode:
-        print("URLs, Post Type and Mode are required for negapedia module posting.")
+    if not args.pages or not args.post_type or not args.mode:
+        print("Pages, Post Type and Mode are required for negapedia module posting.")
         return
     else:
+        web_urls = get_input_parameter_web_urls(args.pages)
         if args.mode == "comparison":
-            print(f"Handling Negapedia module for URLs {args.urls} and mode {args.mode}")
-            generate_comparison_negapedia_post(args.urls, args.post_type, args.mode)
+            print(f"Handling Negapedia module for Pages {web_urls} and mode {args.mode}")
+            generate_comparison_negapedia_post(web_urls, args.post_type, args.mode)
         elif args.mode == "summary":
-            print(f"Handling Negapedia module for URLs {args.urls} and mode {args.mode}")
-            generate_summary_negapedia_post(args.urls, args.post_type, args.mode)
+            print(f"Handling Negapedia module for Pages {web_urls} and mode {args.mode}")
+            generate_summary_negapedia_post(web_urls, args.post_type, args.mode)
 
 
-def generate_comparison_negapedia_post(urls, post_type, mode):
+def generate_comparison_negapedia_post(pages, post_type, mode):
     # Implement the logic to generate and post content specific to Negapedia
-    print(f"Generating Negapedia comparison post for URLs: {urls}, post_type: {post_type}, mode: {mode}")
+    print(f"Generating Negapedia comparison post for Pages: {pages}, post_type: {post_type}, mode: {mode}")
 
     topics_data_array = dict()
-    for topic_url in urls:
+    for topic_url in pages:
         try:
             negapedia_string_data = get_negapedia_data_array(topic_url)
             negapedia_data = convert_negaranks_to_dicts(negapedia_string_data)
@@ -50,15 +52,15 @@ def generate_comparison_negapedia_post(urls, post_type, mode):
     categories = ["conflict", "polemic"]
     plots_paths = []
     for category in categories:
-        plot_negaraks_data_copilot(category, urls, topics_data_array, plots_paths)
+        plot_negaraks_data_copilot(category, pages, topics_data_array, plots_paths)
 
     # Prepare post
-    if len(urls) == 1:
-        topics_str = urls[0]
-    elif len(urls) == 2:
-        topics_str = " and ".join(urls)
+    if len(pages) == 1:
+        topics_str = pages[0]
+    elif len(pages) == 2:
+        topics_str = " and ".join(pages)
     else:
-        topics_str = ", ".join(urls[:-1]) + ", and " + urls[-1]
+        topics_str = ", ".join(pages[:-1]) + ", and " + pages[-1]
     message = f"Comparison of conflict and polemic levels between topics {topics_str}"
     title = message
 
@@ -74,11 +76,11 @@ def generate_comparison_negapedia_post(urls, post_type, mode):
             post_on_web(title, message, plots_paths, 'comparison')
 
 
-def generate_summary_negapedia_post(urls, post_type, mode):
-    print(f"Generating Negapedia summary post for URLs: {urls}, post_type: {post_type}, mode: {mode}")
+def generate_summary_negapedia_post(pages, post_type, mode):
+    print(f"Generating Negapedia summary post for Pages: {pages}, post_type: {post_type}, mode: {mode}")
 
     topics_data_array = dict()
-    for topic_url in urls:
+    for topic_url in pages:
         try:
             negapedia_string_data = get_negapedia_data_array(topic_url)
             negapedia_data = convert_negaranks_to_dicts(negapedia_string_data)
@@ -91,15 +93,15 @@ def generate_summary_negapedia_post(urls, post_type, mode):
     categories = ["conflict", "polemic"]
     plots_paths = []
     for category in categories:
-        plot_negaraks_data_copilot(category, urls, topics_data_array, plots_paths)
+        plot_negaraks_data_copilot(category, pages, topics_data_array, plots_paths)
 
     # Prepare post
-    if len(urls) == 1:
-        topics_str = urls[0]
-    elif len(urls) == 2:
-        topics_str = " and ".join(urls)
+    if len(pages) == 1:
+        topics_str = pages[0]
+    elif len(pages) == 2:
+        topics_str = " and ".join(pages)
     else:
-        topics_str = ", ".join(urls[:-1]) + ", and " + urls[-1]
+        topics_str = ", ".join(pages[:-1]) + ", and " + pages[-1]
     message = f"Conflict and polemic levels for topic {topics_str}"
     title = message
 
@@ -261,7 +263,7 @@ def extract_data(topics_data_array, category):
     return data_to_plot
 
 
-def plot_negaraks_data_copilot(category, urls, topics_data_array, plots_path):
+def plot_negaraks_data_copilot(category, pages, topics_data_array, plots_path):
     # Extract data for plotting
     data_to_plot = extract_data(topics_data_array, category)
 
@@ -285,12 +287,12 @@ def plot_negaraks_data_copilot(category, urls, topics_data_array, plots_path):
     plt.ylabel(y_label, fontsize=14)
 
     # Construct the title
-    if len(urls) == 1:
-        topics_str = urls[0]
-    elif len(urls) == 2:
-        topics_str = " and ".join(urls)
+    if len(pages) == 1:
+        topics_str = pages[0]
+    elif len(pages) == 2:
+        topics_str = " and ".join(pages)
     else:
-        topics_str = ", ".join(urls[:-1]) + ", and " + urls[-1]
+        topics_str = ", ".join(pages[:-1]) + ", and " + pages[-1]
 
     title_plot = "Comparison of " + category + " level between topics "
     plt.title(title_plot, fontsize=16)

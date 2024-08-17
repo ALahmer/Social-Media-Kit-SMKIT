@@ -6,16 +6,16 @@ from bs4 import BeautifulSoup
 
 
 def handle_generic_module(args):
-    if not args.urls or not args.post_type or not args.mode:
-        print("Url, Date, Language and Post Type are required for generic module posting.")
+    if not args.pages or not args.post_type or not args.mode:
+        print("Pages, Post Type and Mode are required for generic module posting.")
         return
     else:
-        print(f"Handling generic module for URLs {args.urls}")
-        generate_generic_post(args.urls, args.post_type)
+        print(f"Handling generic module for Pages {args.pages}")
+        generate_generic_post(args.pages, args.post_type)
 
 
-def generate_generic_post(urls, post_type):
-    for url in urls:
+def generate_generic_post(pages, post_type):
+    for url in pages:
         print(f"Processing URL: {url}")
         page_content = fetch_page_content(url)
         extracted_info = extract_page_info(page_content)
