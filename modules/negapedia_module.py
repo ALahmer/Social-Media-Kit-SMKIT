@@ -61,19 +61,37 @@ def generate_comparison_negapedia_post(pages, post_type, mode):
         topics_str = " and ".join(pages)
     else:
         topics_str = ", ".join(pages[:-1]) + ", and " + pages[-1]
-    message = f"Comparison of conflict and polemic levels between topics {topics_str}"
-    title = message
+    # message = f"Comparison of conflict and polemic levels between topics {topics_str}"
+    # title = message
+
+    post_info = {
+        'title': "Conflict and polemic levels",
+        'description': f"Topic: {topics_str}",
+        'image': None,
+        'image_width': None,
+        'image_height': None,
+        'image_alt': None,
+        'audio': None,
+        'video': None,
+        'url': None,    # this one is mandatory to check (pages [0] maybe)
+        'updated_time': None,
+        'article_published_time': None,
+        'article_modified_time': None,
+        'article_tag': None,
+        'keywords': None,
+        'images': plots_paths   # {{to_fix}}
+    }
 
     for posting_channel in post_type:
         if posting_channel == 'facebook':
             if not check_access_token():
                 start_flask_app()
                 input("Press Enter after completing authentication in the browser...")
-            post_on_facebook(message, plots_paths)
+            post_on_facebook(post_info)
         elif posting_channel == 'twitter':
-            post_on_twitter(message, plots_paths)
+            post_on_twitter(post_info)
         elif posting_channel == 'web':
-            post_on_web(title, message, plots_paths, 'comparison')
+            post_on_web(post_info, 'comparison')
 
 
 def generate_summary_negapedia_post(pages, post_type, mode):
@@ -102,19 +120,37 @@ def generate_summary_negapedia_post(pages, post_type, mode):
         topics_str = " and ".join(pages)
     else:
         topics_str = ", ".join(pages[:-1]) + ", and " + pages[-1]
-    message = f"Conflict and polemic levels for topic {topics_str}"
-    title = message
+    # message = f"Conflict and polemic levels for topic {topics_str}"
+    # title = message
+
+    post_info = {
+        'title': "Conflict and polemic levels",
+        'description': f"Topic: {topics_str}",
+        'image': None,
+        'image_width': None,
+        'image_height': None,
+        'image_alt': None,
+        'audio': None,
+        'video': None,
+        'url': None,    # this one is mandatory to check (pages [0] maybe)
+        'updated_time': None,
+        'article_published_time': None,
+        'article_modified_time': None,
+        'article_tag': None,
+        'keywords': None,
+        'images': plots_paths   # {{to_fix}}
+    }
 
     for posting_channel in post_type:
         if posting_channel == 'facebook':
             if not check_access_token():
                 start_flask_app()
                 input("Press Enter after completing authentication in the browser...")
-            post_on_facebook(message, plots_paths)
+            post_on_facebook(post_info)
         elif posting_channel == 'twitter':
-            post_on_twitter(message, plots_paths)
+            post_on_twitter(post_info)
         elif posting_channel == 'web':
-            post_on_web(title, message, plots_paths, 'summary')
+            post_on_web(post_info, 'summary')
 
 
 def get_negapedia_url(topic):

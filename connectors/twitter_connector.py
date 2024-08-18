@@ -3,7 +3,7 @@ from utils.env_management import load_from_env
 from utils.images_management import get_downloaded_image_path
 
 
-def post_on_twitter(message, images_paths=None):
+def post_on_twitter(post_info):
     env_data = load_from_env()
     if not env_data or not all(k in env_data for k in ('twitter_api_key', 'twitter_api_secret_key', 'twitter_access_token', 'twitter_access_token_secret')):
         print("Twitter credentials not found. Please add them to env.json.")
@@ -23,6 +23,18 @@ def post_on_twitter(message, images_paths=None):
         access_token=env_data['twitter_access_token'],
         access_token_secret=env_data['twitter_access_token_secret']
     )
+
+    url = post_info.get('url')
+    title = post_info.get('title', f"Check out this topic at {url}")
+    description = post_info.get('description', f"Check out this topic at {url}")
+    message = title + "\n" + description
+
+    images_paths = []
+    image = {
+        'location': "web",  # {{to_fix}} for negapedia and multiple plots
+        'src': post_info.get('image')   # {{to_fix}} for negapedia and multiple plots
+    }
+    images_paths.append(image)
 
     if images_paths:
         media_ids = []

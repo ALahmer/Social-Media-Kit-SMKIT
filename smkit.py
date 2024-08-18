@@ -16,9 +16,15 @@ def main():
     args = parser.parse_args()
 
     # args = {
-    #     "module": "negapedia",
-    #     "mode": "comparison",
-    #     "post_type": ["web"],
+    #     # "module": "negapedia",
+    #     "module": None,
+    #     # "mode": "comparison",
+    #     "mode": "summary",
+    #     "post_type": [
+    #         "web",
+    #         "facebook",
+    #         "twitter",
+    #                   ],
     #     "message": None,
     #     "language": None,
     #     # "pages": [
@@ -27,14 +33,16 @@ def main():
     #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/George_W._Bush.html.zip",
     #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/Joe_Biden.html.zip"
     #     # ],
-    #     "pages": [
-    #         "./virtual_local_server/var/www/negapedia/en/html"
-    #     ],
     #     # "pages": [
-    #     #     "http://it.negapedia.org/articles/Donald_Trump",
-    #     #     "http://it.negapedia.org/articles/Joe_Biden",
-    #     #     "http://it.negapedia.org/articles/Barack_Obama"
+    #     #     "./virtual_local_server/var/www/negapedia/en/html"
     #     # ],
+    #     "pages": [
+    #         # "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/",
+    #         # "https://www.ilpost.it/2024/08/18/governo-germania-automobili/",
+    #         # "https://www.buzzfeed.com/sarahaspler/women-who-make-six-figures-are-sharing-their-jobs-1",
+    #         "https://ahrefs.com/blog/it/backlink-seo/",
+    #         # "https://www.w3schools.com/tags/tag_meta.asp",
+    #     ],
     #     "date": None
     # }
     # args = argparse.Namespace(**args)

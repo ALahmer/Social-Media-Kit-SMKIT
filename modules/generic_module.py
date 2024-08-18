@@ -18,26 +18,15 @@ def generate_generic_post(pages, post_type):
     for url in pages:
         print(f"Processing URL: {url}")
         page_content = fetch_page_content(url)
-        extracted_info = extract_page_info(page_content)
-
-        message = extracted_info.get('description') if extracted_info.get('description') else f"Check out this topic at {url}"
-        title = extracted_info.get('title') if extracted_info.get('title') else f"Check out this topic at {url}"
-        print(f"Posting on {post_type} about with message: {message}")
-
-        images_urls = []
-        image = {
-            'location': "web",
-            'src': extracted_info.get('image')
-        }
-        images_urls.append(image)
+        post_info = extract_page_info(page_content, url)
 
         for posting_channel in post_type:
             if posting_channel == 'facebook':
-                post_on_facebook(message, images_urls)
+                post_on_facebook(post_info)
             elif posting_channel == 'twitter':
-                post_on_twitter(message, images_urls)
+                post_on_twitter(post_info)
             elif posting_channel == 'web':
-                post_on_web(title, message, images_urls, 'summary')
+                post_on_web(post_info, 'summary')
 
 
 def fetch_page_content(url):
@@ -49,16 +38,49 @@ def fetch_page_content(url):
         return None
 
 
-def extract_page_info(content):
+def extract_page_info(content, input_url=None):
     if not content:
         return {}
 
     soup = BeautifulSoup(content, 'html.parser')
+
+    def get_meta_content(name):
+        tag = soup.find('meta', attrs={'name': name})
+        if tag:
+            return tag.get('content', None)
+        return None
+
     info = {
-        'title': soup.find('meta', property='og:title')['content'] if soup.find('meta', property='og:title') else (soup.title.string if soup.title else "No Title"),
-        'description': soup.find('meta', property='og:description')['content'] if soup.find('meta', property='og:description') else (soup.find('meta', name='description')['content'] if soup.find('meta', name='description') else "No Description"),
-        'image': soup.find('meta', property='og:image')['content'] if soup.find('meta', property='og:image') else None,
-        'url': soup.find('meta', property='og:url')['content'] if soup.find('meta', property='og:url') else None,
+        'title': (soup.find('meta', property='og:title')['content']
+                  if soup.find('meta', property='og:title')
+                  else (soup.title.string if soup.title else "No Title")),
+        'description': (soup.find('meta', property='og:description')['content']
+                        if soup.find('meta', property='og:description')
+                        else get_meta_content('description')),
+        'image': soup.find('meta', property='og:image')['content']
+                 if soup.find('meta', property='og:image') else None,
+        'image_width': soup.find('meta', property='og:image:width')['content']
+                       if soup.find('meta', property='og:image:width') else None,
+        'image_height': soup.find('meta', property='og:image:height')['content']
+                        if soup.find('meta', property='og:image:height') else None,
+        'image_alt': soup.find('meta', property='og:image:alt')['content']
+                     if soup.find('meta', property='og:image:alt') else None,
+        'audio': soup.find('meta', property='og:audio')['content']
+                 if soup.find('meta', property='og:audio') else None,
+        'video': soup.find('meta', property='og:video')['content']
+                 if soup.find('meta', property='og:video') else None,
+        'url': (soup.find('meta', property='og:url')['content']
+                if soup.find('meta', property='og:url')
+                else input_url),
+        'updated_time': soup.find('meta', property='og:updated_time')['content']
+                        if soup.find('meta', property='og:updated_time') else None,
+        'article_published_time': soup.find('meta', property='article:published_time')['content']
+                                  if soup.find('meta', property='article:published_time') else None,
+        'article_modified_time': soup.find('meta', property='article:modified_time')['content']
+                                 if soup.find('meta', property='article:modified_time') else None,
+        'article_tag': soup.find('meta', property='article:tag')['content']
+                       if soup.find('meta', property='article:tag') else None,
+        'keywords': get_meta_content('Keywords'),
     }
 
     return info

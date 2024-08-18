@@ -38,7 +38,7 @@ def refresh_access_token(facebook_app_id, facebook_app_secret, short_lived_token
         return None
 
 
-def post_on_facebook(message, images_paths=None):
+def post_on_facebook(post_info):
     env_data = load_from_env()
     if not env_data or 'page_access_token' not in env_data:
         print("Access token not found. Please authenticate first.")
@@ -58,6 +58,18 @@ def post_on_facebook(message, images_paths=None):
 
     # Initialize the Graph API with your access token
     graph = facebook.GraphAPI(access_token)
+
+    url = post_info.get('url')
+    title = post_info.get('title', f"Check out this topic at {url}")
+    description = post_info.get('description', f"Check out this topic at {url}")
+    message = title + "\n" + description
+
+    images_paths = []
+    image = {
+        'location': "web",  # {{to_fix}} for negapedia and multiple plots
+        'src': post_info.get('image')   # {{to_fix}} for negapedia and multiple plots
+    }
+    images_paths.append(image)
 
     # Post the message to your page
     if images_paths:
