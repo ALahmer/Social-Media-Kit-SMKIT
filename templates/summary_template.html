@@ -38,6 +38,20 @@
             display: block;
             margin-bottom: 20px;
         }
+        .url-list {
+            margin-top: 20px;
+        }
+        .url-list a {
+            color: #333;
+            text-decoration: none;
+        }
+        .url-list a:hover {
+            text-decoration: underline;
+        }
+        .url-list ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
     </style>
 </head>
 <body>
@@ -58,7 +72,13 @@
     <p><strong>Article modified time:</strong> {{article_modified_time}}</p>
     <p><strong>Article tag:</strong> {{article_tag}}</p>
     <p><strong>Keywords:</strong> {{keywords}}</p>
-    <p><strong>URL:</strong> <a href="{{url}}">{{url}}</a></p>
+
+    <div class="url-list">
+        <strong>URLs:</strong>
+        <ul>
+            {{urls}}
+        </ul>
+    </div>
 
 </body>
 </html>

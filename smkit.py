@@ -37,10 +37,13 @@ def main():
     #     #     "./virtual_local_server/var/www/negapedia/en/html"
     #     # ],
     #     "pages": [
+    #         "http://it.negapedia.org/articles/Joe_Biden",
+    #         "http://it.negapedia.org/articles/Donald_Trump",
+    #         "http://it.negapedia.org/articles/Barack_Obama",
     #         # "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/",
     #         # "https://www.ilpost.it/2024/08/18/governo-germania-automobili/",
     #         # "https://www.buzzfeed.com/sarahaspler/women-who-make-six-figures-are-sharing-their-jobs-1",
-    #         "https://ahrefs.com/blog/it/backlink-seo/",
+    #         # "https://ahrefs.com/blog/it/backlink-seo/",
     #         # "https://www.w3schools.com/tags/tag_meta.asp",
     #     ],
     #     "date": None

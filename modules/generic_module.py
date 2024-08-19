@@ -57,21 +57,24 @@ def extract_page_info(content, input_url=None):
         'description': (soup.find('meta', property='og:description')['content']
                         if soup.find('meta', property='og:description')
                         else get_meta_content('description')),
-        'image': soup.find('meta', property='og:image')['content']
-                 if soup.find('meta', property='og:image') else None,
-        'image_width': soup.find('meta', property='og:image:width')['content']
-                       if soup.find('meta', property='og:image:width') else None,
-        'image_height': soup.find('meta', property='og:image:height')['content']
-                        if soup.find('meta', property='og:image:height') else None,
-        'image_alt': soup.find('meta', property='og:image:alt')['content']
-                     if soup.find('meta', property='og:image:alt') else None,
+        'images': [{
+            'image': soup.find('meta', property='og:image')['content']
+                    if soup.find('meta', property='og:image') else None,
+            'image_width': soup.find('meta', property='og:image:width')['content']
+                        if soup.find('meta', property='og:image:width') else None,
+            'image_height': soup.find('meta', property='og:image:height')['content']
+                            if soup.find('meta', property='og:image:height') else None,
+            'image_alt': soup.find('meta', property='og:image:alt')['content']
+                        if soup.find('meta', property='og:image:alt') else None,
+            'location': "web",
+        }],
         'audio': soup.find('meta', property='og:audio')['content']
                  if soup.find('meta', property='og:audio') else None,
         'video': soup.find('meta', property='og:video')['content']
                  if soup.find('meta', property='og:video') else None,
-        'url': (soup.find('meta', property='og:url')['content']
+        'urls': [(soup.find('meta', property='og:url')['content']
                 if soup.find('meta', property='og:url')
-                else input_url),
+                else input_url)],
         'updated_time': soup.find('meta', property='og:updated_time')['content']
                         if soup.find('meta', property='og:updated_time') else None,
         'article_published_time': soup.find('meta', property='article:published_time')['content']

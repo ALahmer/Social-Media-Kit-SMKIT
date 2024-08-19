@@ -61,25 +61,30 @@ def generate_comparison_negapedia_post(pages, post_type, mode):
         topics_str = " and ".join(pages)
     else:
         topics_str = ", ".join(pages[:-1]) + ", and " + pages[-1]
-    # message = f"Comparison of conflict and polemic levels between topics {topics_str}"
-    # title = message
+
+    images = []
+    for plot_path in plots_paths:
+        image_info = {
+            'image': plot_path,
+            'image_width': None,
+            'image_height': None,
+            'image_alt': f"Plot for topic ... ",    # {{to_fix}}
+            'location': "local",
+        }
+        images.append(image_info)
 
     post_info = {
         'title': "Conflict and polemic levels",
         'description': f"Topic: {topics_str}",
-        'image': None,
-        'image_width': None,
-        'image_height': None,
-        'image_alt': None,
+        'images': images,
         'audio': None,
         'video': None,
-        'url': None,    # this one is mandatory to check (pages [0] maybe)
+        'urls': pages,
         'updated_time': None,
         'article_published_time': None,
         'article_modified_time': None,
         'article_tag': None,
         'keywords': None,
-        'images': plots_paths   # {{to_fix}}
     }
 
     for posting_channel in post_type:
@@ -120,25 +125,30 @@ def generate_summary_negapedia_post(pages, post_type, mode):
         topics_str = " and ".join(pages)
     else:
         topics_str = ", ".join(pages[:-1]) + ", and " + pages[-1]
-    # message = f"Conflict and polemic levels for topic {topics_str}"
-    # title = message
+
+    images = []
+    for plot_path in plots_paths:
+        image_info = {
+            'image': plot_path,
+            'image_width': None,
+            'image_height': None,
+            'image_alt': f"Plot for topic ... ",    # {{to_fix}}
+            'location': "local",
+        }
+        images.append(image_info)
 
     post_info = {
         'title': "Conflict and polemic levels",
         'description': f"Topic: {topics_str}",
-        'image': None,
-        'image_width': None,
-        'image_height': None,
-        'image_alt': None,
+        'images': images,
         'audio': None,
         'video': None,
-        'url': None,    # this one is mandatory to check (pages [0] maybe)
+        'urls': pages,
         'updated_time': None,
         'article_published_time': None,
         'article_modified_time': None,
         'article_tag': None,
         'keywords': None,
-        'images': plots_paths   # {{to_fix}}
     }
 
     for posting_channel in post_type:
@@ -354,11 +364,7 @@ def plot_negaraks_data_copilot(category, pages, topics_data_array, plots_path):
     plt.tight_layout()
     plt.savefig(output_path)
 
-    image = {
-        'location': "local",
-        'src': "images_to_post/" + output_filename
-    }
-    plots_path.append(image)
+    plots_path.append("images_to_post/" + output_filename)
 
     # Show the plot
     # plt.show()

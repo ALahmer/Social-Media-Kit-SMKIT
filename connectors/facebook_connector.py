@@ -59,31 +59,28 @@ def post_on_facebook(post_info):
     # Initialize the Graph API with your access token
     graph = facebook.GraphAPI(access_token)
 
-    url = post_info.get('url')
-    title = post_info.get('title', f"Check out this topic at {url}")
-    description = post_info.get('description', f"Check out this topic at {url}")
+    title = post_info.get('title') or "No Title"
+    description = post_info.get('description') or "No Description"
     message = title + "\n" + description
 
-    images_paths = []
-    image = {
-        'location': "web",  # {{to_fix}} for negapedia and multiple plots
-        'src': post_info.get('image')   # {{to_fix}} for negapedia and multiple plots
-    }
-    images_paths.append(image)
-
     # Post the message to your page
-    if images_paths:
+    if post_info.get('images'):
         media_ids = []
-        for image_path in images_paths:
+        for image_info in post_info.get('images', []):
             try:
-                image_path_src = image_path['src']
-                if image_path['location'] == "web":
-                    image_path_src = get_downloaded_image_path(image_path_src)
-                with open(image_path_src, 'rb') as image:
+                src = image_info.get('image')
+                width = image_info.get('image_width')
+                height = image_info.get('image_height')
+                alt = image_info.get('image_alt') or "Image"
+                location = image_info.get('location')
+
+                if location == "web":
+                    src = get_downloaded_image_path(src)
+                with open(src, 'rb') as image:
                     media = graph.put_photo(image=image, published=False)
                     media_ids.append(media['id'])
             except facebook.GraphAPIError as e:
-                print(f"An error occurred while uploading image {image_path}: {e}")
+                print(f"An error occurred while uploading image {image_info}: {e}")
 
         if media_ids:
             try:

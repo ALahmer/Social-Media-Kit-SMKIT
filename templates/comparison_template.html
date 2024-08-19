@@ -1,4 +1,4 @@
-<!-- template.html -->
+<!-- comparison_template.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,13 +29,56 @@
             display: block;
             margin-bottom: 20px;
         }
+        .media-container {
+            margin-top: 20px;
+        }
+        .media-container video, .media-container audio {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 20px;
+        }
+        .url-list {
+            margin-top: 20px;
+        }
+        .url-list a {
+            color: #333;
+            text-decoration: none;
+        }
+        .url-list a:hover {
+            text-decoration: underline;
+        }
+        .url-list ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>{{title}}</h1>
-    <p>{{message}}</p>
+    <p>{{description}}</p>
+
     <div class="image-container">
         {{images}}
     </div>
+
+    <div class="media-container">
+        {{video}}
+        {{audio}}
+    </div>
+
+    <p><strong>Updated time:</strong> {{updated_time}}</p>
+    <p><strong>Article published time:</strong> {{article_published_time}}</p>
+    <p><strong>Article modified time:</strong> {{article_modified_time}}</p>
+    <p><strong>Article tag:</strong> {{article_tag}}</p>
+    <p><strong>Keywords:</strong> {{keywords}}</p>
+
+    <div class="url-list">
+        <strong>URLs:</strong>
+        <ul>
+            {{urls}}
+        </ul>
+    </div>
+
 </body>
 </html>

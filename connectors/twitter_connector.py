@@ -24,29 +24,26 @@ def post_on_twitter(post_info):
         access_token_secret=env_data['twitter_access_token_secret']
     )
 
-    url = post_info.get('url')
-    title = post_info.get('title', f"Check out this topic at {url}")
-    description = post_info.get('description', f"Check out this topic at {url}")
+    title = post_info.get('title') or "No Title"
+    description = post_info.get('description') or "No Description"
     message = title + "\n" + description
 
-    images_paths = []
-    image = {
-        'location': "web",  # {{to_fix}} for negapedia and multiple plots
-        'src': post_info.get('image')   # {{to_fix}} for negapedia and multiple plots
-    }
-    images_paths.append(image)
-
-    if images_paths:
+    if post_info.get('images'):
         media_ids = []
-        for image_path in images_paths:
+        for image_info in post_info.get('images', []):
             try:
-                image_path_src = image_path['src']
-                if image_path['location'] == "web":
-                    image_path_src = get_downloaded_image_path(image_path_src)
-                media = api.media_upload(image_path_src)
+                src = image_info.get('image')
+                width = image_info.get('image_width')
+                height = image_info.get('image_height')
+                alt = image_info.get('image_alt') or "Image"
+                location = image_info.get('location')
+
+                if location == "web":
+                    src = get_downloaded_image_path(src)
+                media = api.media_upload(src)
                 media_ids.append(media.media_id_string)
             except tweepy.TweepyException as e:
-                print(f"An error occurred while uploading image {image_path}: {e}")
+                print(f"An error occurred while uploading image {image_info}: {e}")
 
         if media_ids:
             try:

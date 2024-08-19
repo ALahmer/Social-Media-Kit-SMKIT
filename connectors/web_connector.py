@@ -20,29 +20,37 @@ def post_on_web(post_info, template):
         print("Passed template is not accepted.")
         return
 
-    url = post_info.get('url')
-    title = post_info.get('title', f"Check out this topic at {url}")
-    description = post_info.get('description', f"Check out this topic at {url}")
+    title = post_info.get('title') or "No Title"
+    description = post_info.get('description') or "No Description"
 
-    images_paths = []
-    image = {
-        'location': "web",
-        'src': post_info.get('image')
-    }
-    images_paths.append(image)
+    images_html = ''
+    for image_info in post_info.get('images', []):
+        src = image_info.get('image')
+        width = image_info.get('image_width')
+        height = image_info.get('image_height')
+        alt = image_info.get('image_alt') or "Image"
+        location = image_info.get('location')
 
-    images_html = ''.join([
-        (f'<img src="../{image_path["src"]}" alt="Image">' if image_path['location'] == 'local'
-        else f'<img src="{image_path["src"]}" alt="Image">')
-        for image_path in images_paths
-    ])  # {{to_test}} for negapedia and multiple plots
+        src_prefix = "" if location == "web" else "../"
+
+        if width and height:
+            image_tag = f'<img src="{src_prefix}{src}" alt="{alt}" width="{width}" height="{height}">'
+        else:
+            image_tag = f'<img src="{src_prefix}{src}" alt="{alt}">'
+
+        images_html += image_tag
+
+    urls_html = ''
+    for url in post_info.get('urls', []):
+        url_tag = f'<li><a href="{url}">{url}</a></li>'
+        urls_html += url_tag
 
     # Replace placeholders with dynamic content and ensure all values are strings
     filled_content = template_content
     filled_content = filled_content.replace('{{title}}', str(title))
     filled_content = filled_content.replace('{{description}}', str(description))
     filled_content = filled_content.replace('{{images}}', str(images_html))
-    filled_content = filled_content.replace('{{url}}', str(post_info.get('url', url)))
+    filled_content = filled_content.replace('{{urls}}', str(urls_html))
 
     # Manually insert video and audio if they exist
     video_html = ''
