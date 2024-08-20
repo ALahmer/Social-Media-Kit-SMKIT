@@ -11,10 +11,10 @@ def post_on_web(post_info, template):
 
     # Load the HTML template
     if template == 'comparison':
-        with open('templates/comparison_template.html', 'r') as template_file:
+        with open('templates/web_post_comparison_template.html', 'r') as template_file:
             template_content = template_file.read()
     elif template == 'summary':
-        with open('templates/summary_template.html', 'r') as template_file:
+        with open('templates/web_post_summary_template.html', 'r') as template_file:
             template_content = template_file.read()
     else:
         print("Passed template is not accepted.")

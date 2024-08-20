@@ -16,7 +16,8 @@ def download_image(url):
 def get_downloaded_image_path(image_path_src):
     image_data = download_image(image_path_src)
     with Image.open(image_data) as img:
+        original_format = img.format.lower()
         timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
-        image_path_src = "images_to_post/temp_image_" + timestamp + ".jpg"
+        image_path_src = f"images_to_post/temp_image_{timestamp}.{original_format}"
         img.save(image_path_src)
     return image_path_src

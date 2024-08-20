@@ -26,7 +26,24 @@ def post_on_twitter(post_info):
 
     title = post_info.get('title') or "No Title"
     description = post_info.get('description') or "No Description"
-    message = title + "\n" + description
+    tags = post_info.get('article_tag')
+    keywords = post_info.get('keywords')
+
+    if tags:
+        tags = " ".join(f"#{tag.strip().replace(' ', '')}" for tag in tags.split(','))
+    else:
+        tags = ""
+    if keywords:
+        keywords = " ".join(f"#{keyword.strip().replace(' ', '')}" for keyword in keywords.split(','))
+    else:
+        keywords = ""
+
+    with open('templates/facebook_post_template.txt', 'r') as template_file:
+        template_content = template_file.read()
+    message = template_content.replace('{{title}}', title)
+    message = message.replace('{{description}}', description)
+    message = message.replace('{{tags}}', tags)
+    message = message.replace('{{keywords}}', keywords)
 
     if post_info.get('images'):
         media_ids = []
@@ -47,7 +64,7 @@ def post_on_twitter(post_info):
 
         if media_ids:
             try:
-                client.create_tweet(text=message, media_ids=media_ids)
+                client.create_tweet(text=message, media_ids=media_ids)   # {{to_check}} if tweet has certain hashtag the posting will go on 403 error (try to print verbose logs, example problematic link: https://www.w3schools.com/tags/tag_meta.asp)
                 print("Successfully posted the tweet with image.")
             except tweepy.TweepyException as e:
                 print(f"An error occurred while creating the tweet: {e}")
@@ -55,7 +72,7 @@ def post_on_twitter(post_info):
             print("No images were uploaded. Post was not created.")
     else:
         try:
-            client.create_tweet(text=message)
+            client.create_tweet(text=message)   # {{to_check}} if tweet has certain hashtag the posting will go on 403 error (try to print verbose logs, example problematic link: https://www.w3schools.com/tags/tag_meta.asp)
             print("Successfully posted the tweet.")
         except tweepy.TweepyException as e:
             print(f"An error occurred: {e}")

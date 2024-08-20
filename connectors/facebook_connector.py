@@ -61,7 +61,24 @@ def post_on_facebook(post_info):
 
     title = post_info.get('title') or "No Title"
     description = post_info.get('description') or "No Description"
-    message = title + "\n" + description
+    tags = post_info.get('article_tag')
+    keywords = post_info.get('keywords')
+
+    if tags:
+        tags = " ".join(f"#{tag.strip().replace(' ', '')}" for tag in tags.split(','))
+    else:
+        tags = ""
+    if keywords:
+        keywords = " ".join(f"#{keyword.strip().replace(' ', '')}" for keyword in keywords.split(','))
+    else:
+        keywords = ""
+
+    with open('templates/facebook_post_template.txt', 'r') as template_file:
+        template_content = template_file.read()
+    message = template_content.replace('{{title}}', title)
+    message = message.replace('{{description}}', description)
+    message = message.replace('{{tags}}', tags)
+    message = message.replace('{{keywords}}', keywords)
 
     # Post the message to your page
     if post_info.get('images'):
