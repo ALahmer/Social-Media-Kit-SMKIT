@@ -25,7 +25,7 @@ def handle_negapedia_module(args):
         print("Pages, Post Type and Mode are required for negapedia module posting.")
         return
     else:
-        web_urls = get_input_parameter_web_urls(args.pages, 'negapedia', args.base_directory, args.base_url)
+        web_urls = get_input_parameter_web_urls(args.pages, 'negapedia', args.remove_suffix, args.base_directory, args.base_url)
         if args.mode == "comparison":
             print(f"Handling Negapedia module for Pages {web_urls} and mode {args.mode}")
             generate_comparison_negapedia_post(web_urls, args.post_type, args.mode)

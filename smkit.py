@@ -14,14 +14,15 @@ def main():
     parser.add_argument('--date', type=str, help='Specify the date for filtering pages (YYYY-MM-DD)')
     parser.add_argument('--base_directory', type=str, help='Specify the filesystem website base directory (e.g., /var/www/negapedia/en/html)')
     parser.add_argument('--base_url', type=str, help='Specify the website base url (e.g., http://en.negapedia.org)')
+    parser.add_argument('--remove_suffix', action='store_true', help='Remove .html or .htm suffixes from URLs')
 
     args = parser.parse_args()
 
     # args = {
     #     "module": "negapedia",
     #     # "module": None,
-    #     "mode": "comparison",
-    #     # "mode": "summary",
+    #     # "mode": "comparison",
+    #     "mode": "summary",
     #     "post_type": [
     #         "web",
     #         # "facebook",
@@ -36,23 +37,24 @@ def main():
     #     #     # "./virtual_local_server/var/www/negapedia/en/html/articles/Joe_Biden.html.zip"
     #     # ],
     #     "pages": [
-    #         "./virtual_local_server/var/www/negapedia/en/html"
+    #         "./virtual_local_server/var/www/negapedia/it/html"
     #     ],
     #     # "pages": [
     #     #     # "http://it.negapedia.org/articles/Joe_Biden",
     #     #     # "http://it.negapedia.org/articles/Donald_Trump",
     #     #     # "http://it.negapedia.org/articles/Barack_Obama",
-    #     #     # "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/",
+    #     #     "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/",
     #     #     # "https://www.ilpost.it/2024/08/18/governo-germania-automobili/",
     #     #     # "https://www.buzzfeed.com/sarahaspler/women-who-make-six-figures-are-sharing-their-jobs-1",
     #     #     # "https://ahrefs.com/blog/it/backlink-seo/",
     #     #     # "https://www.w3schools.com/tags/tag_meta.asp",
     #     #     # "https://www.bbc.com/news/articles/cj08mn24jplo",
-    #     #     "https://www.thetimes.com/sport/tennis/article/jannik-sinner-escapes-drugs-ban-failed-tests-tennis-world-no1-ksp89hmnc",
+    #     #     # "https://www.thetimes.com/sport/tennis/article/jannik-sinner-escapes-drugs-ban-failed-tests-tennis-world-no1-ksp89hmnc",
     #     # ],
     #     "date": None,
-    #     "base_directory": "./virtual_local_server/var/www/negapedia/en/html",
-    #     "base_url": "http://it.negapedia.org",
+    #     "base_directory": None,
+    #     "base_url": None,
+    #     "remove_suffix": True,
     # }
     # args = argparse.Namespace(**args)
 

@@ -11,7 +11,7 @@ def handle_generic_module(args):
         print("Pages, Post Type and Mode are required for generic module posting.")
         return
     else:
-        web_urls = get_input_parameter_web_urls(args.pages, 'generic', args.base_directory, args.base_url)
+        web_urls = get_input_parameter_web_urls(args.pages, 'generic', args.remove_suffix, args.base_directory, args.base_url)
         print(f"Handling generic module for Pages {args.pages}")
         generate_generic_post(web_urls, args.post_type)
 
