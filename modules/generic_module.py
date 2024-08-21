@@ -4,6 +4,7 @@ from connectors.web_connector import post_on_web
 from utils.input_validation_management import get_input_parameter_web_urls
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 
 def handle_generic_module(args):
@@ -13,14 +14,37 @@ def handle_generic_module(args):
     else:
         web_urls = get_input_parameter_web_urls(args.pages, 'generic', args.remove_suffix, args.base_directory, args.base_url)
         print(f"Handling generic module for Pages {args.pages}")
-        generate_generic_post(web_urls, args.post_type)
+        generate_generic_post(web_urls, args.post_type, args.minimum_article_modified_date)
 
 
-def generate_generic_post(pages, post_type):
+def generate_generic_post(pages, post_type, minimum_article_modified_date):
+    # Convert the minimum_article_modified_date from string to a datetime object
+    if minimum_article_modified_date:
+        minimum_date = datetime.strptime(minimum_article_modified_date, '%Y-%m-%d')
+    else:
+        minimum_date = None  # No filtering if no date is provided
+
     for url in pages:
         print(f"Processing URL: {url}")
         page_content = fetch_page_content(url)
         post_info = extract_page_info(page_content, url)
+
+        article_modified_time_str = post_info.get('article_modified_time', None)
+
+        if article_modified_time_str:
+            # Convert the article_modified_time from string to a datetime object
+            try:
+                article_modified_time = datetime.strptime(article_modified_time_str, '%Y-%m-%dT%H:%M:%S%z')
+                # Convert to offset-naive by removing the timezone info
+                article_modified_time = article_modified_time.replace(tzinfo=None)
+            except ValueError:
+                # Handle case where the date might not have timezone info
+                article_modified_time = datetime.strptime(article_modified_time_str, '%Y-%m-%dT%H:%M:%S')
+
+            # Compare article's modified time with the minimum date
+            if minimum_date and article_modified_time < minimum_date:
+                print(f"Skipping URL: {url} - Article modified date is too old.")
+                continue
 
         for posting_channel in post_type:
             if posting_channel == 'facebook':
