@@ -1,6 +1,7 @@
 from connectors.facebook_connector import post_on_facebook
 from connectors.twitter_connector import post_on_twitter
 from connectors.web_connector import post_on_web
+from utils.input_validation_management import get_input_parameter_web_urls
 import requests
 from bs4 import BeautifulSoup
 
@@ -10,8 +11,9 @@ def handle_generic_module(args):
         print("Pages, Post Type and Mode are required for generic module posting.")
         return
     else:
+        web_urls = get_input_parameter_web_urls(args.pages, 'generic', args.base_directory, args.base_url)
         print(f"Handling generic module for Pages {args.pages}")
-        generate_generic_post(args.pages, args.post_type)
+        generate_generic_post(web_urls, args.post_type)
 
 
 def generate_generic_post(pages, post_type):

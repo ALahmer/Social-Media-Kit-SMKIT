@@ -10,6 +10,14 @@
   "twitter_api_key_OAuth_2_0": "",
   "twitter_api_secret_key_OAuth_2_0": "",
   "chromedriver_path": "C:\\Program Files\\Google\\ChromeDriver\\chromedriver.exe",
-  "filesystem_website_base_directory": "/var/www/negapedia/en/html",
-  "website_base_url": "http://en.negapedia.org"
+  "modules": {
+    "generic": {
+      "filesystem_website_base_directory": "/var/www/mywebsite/en/html",
+      "website_base_url": "https://en.mywebsite.org"
+    },
+    "negapedia": {
+      "filesystem_website_base_directory": "/var/www/negapedia/en/html",
+      "website_base_url": "http://en.negapedia.org"
+    }
+  }
 }

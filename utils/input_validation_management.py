@@ -5,21 +5,25 @@ from utils.env_management import load_from_env
 env_data = load_from_env()
 
 
-def get_input_parameter_web_urls(input_paths):
+def get_input_parameter_web_urls(input_paths, module, args_base_directory=None, args_base_url=None):
     web_urls = []
     for input_path in input_paths:
-        web_url = process_input(input_path)
+        web_url = process_input(input_path, module, args_base_directory, args_base_url)
         web_urls.extend(web_url)
     return web_urls
 
 
-def process_input(input_path):
+def process_input(input_path, module, args_base_directory=None, args_base_url=None):
     """
     Processes a given input path, handling URLs, files, and directories.
     Maps local paths to web URLs if base_dir and base_url are provided.
     """
-    base_dir = env_data.get('filesystem_website_base_directory')
-    base_url = env_data.get('website_base_url')
+    if args_base_directory and args_base_url:
+        base_dir = args_base_directory
+        base_url = args_base_url
+    else:
+        base_dir = env_data.get('modules').get(f'{module}').get('filesystem_website_base_directory')
+        base_url = env_data.get('modules').get(f'{module}').get('website_base_url')
 
     if not base_dir or not base_url:
         raise ValueError("Base directory or base URL is not defined in the environment data.")
