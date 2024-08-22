@@ -28,7 +28,7 @@ def main():
     #         "facebook",
     #         "twitter",
     #                   ],
-    #     "message": None,
+    #     "message": "This is a specific message for the post",
     #     "language": 'en',
     #     # "pages": [
     #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/Barack_Obama.html.zip",

@@ -14,10 +14,10 @@ def handle_generic_module(args):
     else:
         web_urls = get_input_parameter_web_urls(args.pages, 'generic', args.remove_suffix, args.base_directory, args.base_url)
         print(f"Handling generic module for Pages {args.pages}")
-        generate_generic_post(web_urls, args.post_type, args.language, args.minimum_article_modified_date)
+        generate_generic_post(web_urls, args.post_type, args.message, args.language, args.minimum_article_modified_date)
 
 
-def generate_generic_post(pages, post_type, language, minimum_article_modified_date):
+def generate_generic_post(pages, post_type, message, language, minimum_article_modified_date):
     # Convert the minimum_article_modified_date from string to a datetime object
     if minimum_article_modified_date:
         minimum_date = datetime.strptime(minimum_article_modified_date, '%Y-%m-%d')
@@ -28,6 +28,7 @@ def generate_generic_post(pages, post_type, language, minimum_article_modified_d
         print(f"Processing URL: {url}")
         page_content = fetch_page_content(url)
         post_info = extract_page_info(page_content, url)
+        post_info['message'] = message
 
         article_modified_time_str = post_info.get('article_modified_time', None)
 
@@ -83,6 +84,7 @@ def extract_page_info(content, input_url=None):
         'description': (soup.find('meta', property='og:description')['content']
                         if soup.find('meta', property='og:description')
                         else get_meta_content('description')),
+        'message': None,
         'images': [{
             'image': soup.find('meta', property='og:image')['content']
                     if soup.find('meta', property='og:image') else None,

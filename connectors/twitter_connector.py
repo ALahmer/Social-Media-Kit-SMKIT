@@ -25,7 +25,7 @@ def post_on_twitter(post_info, language):
     )
 
     title = post_info.get('title') or "No Title"
-    description = post_info.get('description') or "No Description"
+    description = post_info.get('message') or post_info.get('description') or "No Description"
     tags = post_info.get('article_tag')
     keywords = post_info.get('keywords')
 
@@ -38,7 +38,7 @@ def post_on_twitter(post_info, language):
     else:
         keywords = ""
 
-    with open(f'templates/{language}/facebook_post_template.txt', 'r') as template_file:
+    with open(f'templates/{language}/twitter_post_template.txt', 'r') as template_file:
         template_content = template_file.read()
     message = template_content.replace('{{title}}', title)
     message = message.replace('{{description}}', description)

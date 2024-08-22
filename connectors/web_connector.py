@@ -21,7 +21,7 @@ def post_on_web(post_info, template, language):
         return
 
     title = post_info.get('title') or "No Title"
-    description = post_info.get('description') or "No Description"
+    description = post_info.get('message') or post_info.get('description') or "No Description"
 
     images_html = ''
     for image_info in post_info.get('images', []):

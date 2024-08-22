@@ -60,7 +60,7 @@ def post_on_facebook(post_info, language):
     graph = facebook.GraphAPI(access_token)
 
     title = post_info.get('title') or "No Title"
-    description = post_info.get('description') or "No Description"
+    description = post_info.get('message') or post_info.get('description') or "No Description"
     tags = post_info.get('article_tag')
     keywords = post_info.get('keywords')
 

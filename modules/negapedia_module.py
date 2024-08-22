@@ -28,13 +28,13 @@ def handle_negapedia_module(args):
         web_urls = get_input_parameter_web_urls(args.pages, 'negapedia', args.remove_suffix, args.base_directory, args.base_url)
         if args.mode == "comparison":
             print(f"Handling Negapedia module for Pages {web_urls} and mode {args.mode}")
-            generate_comparison_negapedia_post(web_urls, args.post_type, args.language)
+            generate_comparison_negapedia_post(web_urls, args.post_type, args.message, args.language)
         elif args.mode == "summary":
             print(f"Handling Negapedia module for Pages {web_urls} and mode {args.mode}")
-            generate_summary_negapedia_post(web_urls, args.post_type, args.language)
+            generate_summary_negapedia_post(web_urls, args.post_type, args.message, args.language)
 
 
-def generate_comparison_negapedia_post(pages, post_type, language):
+def generate_comparison_negapedia_post(pages, post_type, message, language):
     # Implement the logic to generate and post content specific to Negapedia
     print(f"Generating Negapedia comparison post for Pages: {pages}, post_type: {post_type}")
 
@@ -76,6 +76,7 @@ def generate_comparison_negapedia_post(pages, post_type, language):
     post_info = {
         'title': "Conflict and polemic levels",
         'description': f"Topic: {topics_str}",
+        'message': message,
         'images': images,
         'audio': None,
         'video': None,
@@ -99,7 +100,7 @@ def generate_comparison_negapedia_post(pages, post_type, language):
             post_on_web(post_info, 'comparison', language)
 
 
-def generate_summary_negapedia_post(pages, post_type, language):
+def generate_summary_negapedia_post(pages, post_type, message, language):
     print(f"Generating Negapedia summary post for Pages: {pages}, post_type: {post_type}")
 
     topics_data_array = dict()
@@ -140,6 +141,7 @@ def generate_summary_negapedia_post(pages, post_type, language):
     post_info = {
         'title': "Conflict and polemic levels",
         'description': f"Topic: {topics_str}",
+        'message': message,
         'images': images,
         'audio': None,
         'video': None,
