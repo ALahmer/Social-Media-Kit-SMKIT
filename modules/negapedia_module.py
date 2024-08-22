@@ -28,15 +28,15 @@ def handle_negapedia_module(args):
         web_urls = get_input_parameter_web_urls(args.pages, 'negapedia', args.remove_suffix, args.base_directory, args.base_url)
         if args.mode == "comparison":
             print(f"Handling Negapedia module for Pages {web_urls} and mode {args.mode}")
-            generate_comparison_negapedia_post(web_urls, args.post_type, args.mode)
+            generate_comparison_negapedia_post(web_urls, args.post_type, args.language)
         elif args.mode == "summary":
             print(f"Handling Negapedia module for Pages {web_urls} and mode {args.mode}")
-            generate_summary_negapedia_post(web_urls, args.post_type, args.mode)
+            generate_summary_negapedia_post(web_urls, args.post_type, args.language)
 
 
-def generate_comparison_negapedia_post(pages, post_type, mode):
+def generate_comparison_negapedia_post(pages, post_type, language):
     # Implement the logic to generate and post content specific to Negapedia
-    print(f"Generating Negapedia comparison post for Pages: {pages}, post_type: {post_type}, mode: {mode}")
+    print(f"Generating Negapedia comparison post for Pages: {pages}, post_type: {post_type}")
 
     topics_data_array = dict()
     for topic_url in pages:
@@ -92,15 +92,15 @@ def generate_comparison_negapedia_post(pages, post_type, mode):
             if not check_access_token():
                 start_flask_app()
                 input("Press Enter after completing authentication in the browser...")
-            post_on_facebook(post_info)
+            post_on_facebook(post_info, language)
         elif posting_channel == 'twitter':
-            post_on_twitter(post_info)
+            post_on_twitter(post_info, language)
         elif posting_channel == 'web':
-            post_on_web(post_info, 'comparison')
+            post_on_web(post_info, 'comparison', language)
 
 
-def generate_summary_negapedia_post(pages, post_type, mode):
-    print(f"Generating Negapedia summary post for Pages: {pages}, post_type: {post_type}, mode: {mode}")
+def generate_summary_negapedia_post(pages, post_type, language):
+    print(f"Generating Negapedia summary post for Pages: {pages}, post_type: {post_type}")
 
     topics_data_array = dict()
     for topic_url in pages:
@@ -156,11 +156,11 @@ def generate_summary_negapedia_post(pages, post_type, mode):
             if not check_access_token():
                 start_flask_app()
                 input("Press Enter after completing authentication in the browser...")
-            post_on_facebook(post_info)
+            post_on_facebook(post_info, language)
         elif posting_channel == 'twitter':
-            post_on_twitter(post_info)
+            post_on_twitter(post_info, language)
         elif posting_channel == 'web':
-            post_on_web(post_info, 'summary')
+            post_on_web(post_info, 'summary', language)
 
 
 def get_negapedia_url(topic):

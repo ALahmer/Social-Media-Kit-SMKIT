@@ -10,7 +10,7 @@ def main():
     parser.add_argument('--mode', type=str, choices=['comparison', 'summary'], help='Specify the mode to analise topics')
     parser.add_argument('--post_type', nargs='+', type=str, choices=['twitter', 'facebook', 'web'], help='Specify the type of post')
     parser.add_argument('--message', type=str, help='Specify a custom message for the post')
-    parser.add_argument('--language', type=str, help='Specify the language for the post (e.g., en, it)')
+    parser.add_argument('--language', type=str, choices=['en', 'it'], default='en', help='Specify the language for the post')
     parser.add_argument('--minimum_article_modified_date', type=str, help='Specify the minimum article modified date for filtering pages (YYYY-MM-DD)')
     parser.add_argument('--base_directory', type=str, help='Specify the filesystem website base directory (e.g., /var/www/negapedia/en/html)')
     parser.add_argument('--base_url', type=str, help='Specify the website base url (e.g., http://en.negapedia.org)')
@@ -25,11 +25,11 @@ def main():
     #     "mode": "summary",
     #     "post_type": [
     #         "web",
-    #         # "facebook",
-    #         # "twitter",
+    #         "facebook",
+    #         "twitter",
     #                   ],
     #     "message": None,
-    #     "language": None,
+    #     "language": 'en',
     #     # "pages": [
     #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/Barack_Obama.html.zip",
     #     #     # "./virtual_local_server/var/www/negapedia/en/html/articles/Donald_Trump.html.zip",
@@ -43,18 +43,18 @@ def main():
     #         # "http://it.negapedia.org/articles/Joe_Biden",
     #         # "http://it.negapedia.org/articles/Donald_Trump",
     #         # "http://it.negapedia.org/articles/Barack_Obama",
-    #         "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/",
-    #         # "https://www.ilpost.it/2024/08/18/governo-germania-automobili/",
+    #         # "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/",
+    #         "https://www.ilpost.it/2024/08/18/governo-germania-automobili/",
     #         # "https://www.buzzfeed.com/sarahaspler/women-who-make-six-figures-are-sharing-their-jobs-1",
     #         # "https://ahrefs.com/blog/it/backlink-seo/",
     #         # "https://www.w3schools.com/tags/tag_meta.asp",
     #         # "https://www.bbc.com/news/articles/cj08mn24jplo",
     #         # "https://www.thetimes.com/sport/tennis/article/jannik-sinner-escapes-drugs-ban-failed-tests-tennis-world-no1-ksp89hmnc",
     #     ],
-    #     "minimum_article_modified_date": "2024-08-10",
+    #     "minimum_article_modified_date": None,
     #     "base_directory": None,
     #     "base_url": None,
-    #     "remove_suffix": True,
+    #     "remove_suffix": False,
     # }
     # args = argparse.Namespace(**args)
 

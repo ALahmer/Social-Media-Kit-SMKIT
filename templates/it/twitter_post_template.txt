@@ -1,0 +1,7 @@
+Titolo del post:
+{{title}}
+
+{{description}}
+
+Etichette: {{tags}}
+Parole chiave: {{keywords}}

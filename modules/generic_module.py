@@ -14,10 +14,10 @@ def handle_generic_module(args):
     else:
         web_urls = get_input_parameter_web_urls(args.pages, 'generic', args.remove_suffix, args.base_directory, args.base_url)
         print(f"Handling generic module for Pages {args.pages}")
-        generate_generic_post(web_urls, args.post_type, args.minimum_article_modified_date)
+        generate_generic_post(web_urls, args.post_type, args.language, args.minimum_article_modified_date)
 
 
-def generate_generic_post(pages, post_type, minimum_article_modified_date):
+def generate_generic_post(pages, post_type, language, minimum_article_modified_date):
     # Convert the minimum_article_modified_date from string to a datetime object
     if minimum_article_modified_date:
         minimum_date = datetime.strptime(minimum_article_modified_date, '%Y-%m-%d')
@@ -48,11 +48,11 @@ def generate_generic_post(pages, post_type, minimum_article_modified_date):
 
         for posting_channel in post_type:
             if posting_channel == 'facebook':
-                post_on_facebook(post_info)
+                post_on_facebook(post_info, language)
             elif posting_channel == 'twitter':
-                post_on_twitter(post_info)
+                post_on_twitter(post_info, language)
             elif posting_channel == 'web':
-                post_on_web(post_info, 'summary')
+                post_on_web(post_info, 'summary', language)
 
 
 def fetch_page_content(url):

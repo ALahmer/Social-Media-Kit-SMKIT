@@ -38,7 +38,7 @@ def refresh_access_token(facebook_app_id, facebook_app_secret, short_lived_token
         return None
 
 
-def post_on_facebook(post_info):
+def post_on_facebook(post_info, language):
     env_data = load_from_env()
     if not env_data or 'page_access_token' not in env_data:
         print("Access token not found. Please authenticate first.")
@@ -73,7 +73,7 @@ def post_on_facebook(post_info):
     else:
         keywords = ""
 
-    with open('templates/facebook_post_template.txt', 'r') as template_file:
+    with open(f'templates/{language}/facebook_post_template.txt', 'r') as template_file:
         template_content = template_file.read()
     message = template_content.replace('{{title}}', title)
     message = message.replace('{{description}}', description)

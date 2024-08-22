@@ -3,7 +3,7 @@ from utils.env_management import load_from_env
 from utils.images_management import get_downloaded_image_path
 
 
-def post_on_twitter(post_info):
+def post_on_twitter(post_info, language):
     env_data = load_from_env()
     if not env_data or not all(k in env_data for k in ('twitter_api_key', 'twitter_api_secret_key', 'twitter_access_token', 'twitter_access_token_secret')):
         print("Twitter credentials not found. Please add them to env.json.")
@@ -38,7 +38,7 @@ def post_on_twitter(post_info):
     else:
         keywords = ""
 
-    with open('templates/facebook_post_template.txt', 'r') as template_file:
+    with open(f'templates/{language}/facebook_post_template.txt', 'r') as template_file:
         template_content = template_file.read()
     message = template_content.replace('{{title}}', title)
     message = message.replace('{{description}}', description)
