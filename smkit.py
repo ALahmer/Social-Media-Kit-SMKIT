@@ -1,6 +1,13 @@
 import argparse
-from modules.negapedia_module import handle_negapedia_module
-from modules.generic_module import handle_generic_module
+import modules.generic_module as generic_module
+
+
+def load_module(module_name):
+    try:
+        module = __import__(f'modules.{module_name}_module', fromlist=[''])
+        return module
+    except ImportError:
+        raise ImportError(f"Module '{module_name}' not found. Please ensure it exists in the 'modules' directory.")
 
 
 def main():
@@ -59,12 +66,14 @@ def main():
     # args = argparse.Namespace(**args)
 
     if args.module:
-        if args.module.lower() == 'negapedia':
-            handle_negapedia_module(args)
-        else:
-            print(f"Module {args.module} not supported.")
+        try:
+            module = load_module(args.module.lower())
+            module.handle_module(args)
+        except ImportError as e:
+            print(e)
+            exit(1)
     else:
-        handle_generic_module(args)
+        generic_module.handle_module(args)
 
 
 if __name__ == "__main__":

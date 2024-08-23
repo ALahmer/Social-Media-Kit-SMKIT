@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 
-def handle_generic_module(args):
+def handle_module(args):
     if not args.pages or not args.post_type or not args.mode:
         print("Pages, Post Type and Mode are required for generic module posting.")
         return
