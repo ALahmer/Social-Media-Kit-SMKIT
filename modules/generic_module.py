@@ -1,117 +1,136 @@
-from connectors.facebook_connector import post_on_facebook
-from connectors.twitter_connector import post_on_twitter
-from connectors.web_connector import post_on_web
+from .base_module import BaseModule
+from schemas.pageinfo import PageInfo
+from typing import Any, List, Optional
 from utils.input_validation_management import get_input_parameter_web_urls
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
 
-def handle_module(args):
-    if not args.pages or not args.post_type or not args.mode:
-        print("Pages, Post Type and Mode are required for generic module posting.")
-        return
-    else:
-        web_urls = get_input_parameter_web_urls(args.pages, 'generic', args.remove_suffix, args.base_directory, args.base_url)
+class GenericModule(BaseModule):
+    module = 'generic'
+
+    def handle_module(self, args: Any) -> None:
+        if not args.pages or not args.post_type or not args.mode or not args.language:
+            raise ValueError("Pages, Post Type, Mode and Language are required for generic module posting.")
         print(f"Handling generic module for Pages {args.pages}")
-        generate_generic_post(web_urls, args.post_type, args.message, args.language, args.minimum_article_modified_date)
+        self.process_pages(
+            urls=args.pages,
+            post_type=args.post_type,
+            mode=args.mode,
+            language=args.language,
+            remove_suffix=args.remove_suffix,
+            base_directory=args.base_directory,
+            base_url=args.base_url,
+            minimum_article_modified_date=args.minimum_article_modified_date,
+            message=args.message
+        )
 
+    def process_pages(
+            self,
+            urls: List[str],
+            post_type: List[str],
+            mode: str,
+            language: str,
+            remove_suffix: Optional[bool] = None,
+            base_directory: Optional[str] = None,
+            base_url: Optional[str] = None,
+            minimum_article_modified_date: Optional[str] = None,
+            message: Optional[str] = None
+    ) -> None:
+        web_urls = get_input_parameter_web_urls(urls, self.module, remove_suffix, base_directory, base_url)
 
-def generate_generic_post(pages, post_type, message, language, minimum_article_modified_date):
-    # Convert the minimum_article_modified_date from string to a datetime object
-    if minimum_article_modified_date:
-        minimum_date = datetime.strptime(minimum_article_modified_date, '%Y-%m-%d')
-    else:
-        minimum_date = None  # No filtering if no date is provided
+        minimum_date = datetime.strptime(minimum_article_modified_date, '%Y-%m-%d') if minimum_article_modified_date else None
 
-    for url in pages:
-        print(f"Processing URL: {url}")
-        page_content = fetch_page_content(url)
-        post_info = extract_page_info(page_content, url)
-        post_info['message'] = message
+        page_info = self.extract_pages_info(web_urls)
+        page_info['message'] = message
 
-        article_modified_time_str = post_info.get('article_modified_time', None)
+        if minimum_date:
+            article_modified_time_str = page_info.get('article_modified_time', None)
+            if article_modified_time_str:
+                try:
+                    article_modified_time = datetime.strptime(article_modified_time_str, '%Y-%m-%dT%H:%M:%S%z').replace(tzinfo=None)
+                except ValueError:
+                    article_modified_time = datetime.strptime(article_modified_time_str, '%Y-%m-%dT%H:%M:%S')
 
-        if article_modified_time_str:
-            # Convert the article_modified_time from string to a datetime object
-            try:
-                article_modified_time = datetime.strptime(article_modified_time_str, '%Y-%m-%dT%H:%M:%S%z')
-                # Convert to offset-naive by removing the timezone info
-                article_modified_time = article_modified_time.replace(tzinfo=None)
-            except ValueError:
-                # Handle case where the date might not have timezone info
-                article_modified_time = datetime.strptime(article_modified_time_str, '%Y-%m-%dT%H:%M:%S')
+                if minimum_date and article_modified_time < minimum_date:
+                    raise ValueError(f"URL: {web_urls[0]} - Article modified date is too old.")
+            else:
+                raise ValueError(f"URL: {web_urls[0]} - Article modified date is not filled.")
 
-            # Compare article's modified time with the minimum date
-            if minimum_date and article_modified_time < minimum_date:
-                print(f"Skipping URL: {url} - Article modified date is too old.")
-                continue
+        self.generate_posts(page_info, post_type, mode, language)
 
-        for posting_channel in post_type:
-            if posting_channel == 'facebook':
-                post_on_facebook(post_info, language)
-            elif posting_channel == 'twitter':
-                post_on_twitter(post_info, language)
-            elif posting_channel == 'web':
-                post_on_web(post_info, 'summary', language)
+    def extract_pages_info(self, urls: List[str]) -> PageInfo:
+        url = urls[0]
+        page_content = self.fetch_page_content(url)
 
+        if not page_content:
+            return {
+                'title': None,
+                'description': None,
+                'message': None,
+                'images': [],
+                'audio': None,
+                'video': None,
+                'urls': [],
+                'updated_time': None,
+                'article_published_time': None,
+                'article_modified_time': None,
+                'article_tag': None,
+                'keywords': None,
+            }
 
-def fetch_page_content(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.text
-    else:
-        print(f"Failed to fetch the page content from {url}")
-        return None
+        soup = BeautifulSoup(page_content, 'html.parser')
 
+        def get_meta_content(name):
+            tag = soup.find('meta', attrs={'name': name})
+            return tag.get('content', None) if tag else None
 
-def extract_page_info(content, input_url=None):
-    if not content:
-        return {}
+        info = {
+            'title': (soup.find('meta', property='og:title').get('content', None)
+                      if soup.find('meta', property='og:title')
+                      else (soup.title.string if soup.title else "No Title")),  # {{to_check}} what to put if title can not be retrieved
+            'description': (soup.find('meta', property='og:description')['content']
+                            if soup.find('meta', property='og:description')
+                            else get_meta_content('description')),
+            'message': None,
+            'images': [{
+                'image': soup.find('meta', property='og:image')['content']
+                if soup.find('meta', property='og:image') else None,
+                'image_width': soup.find('meta', property='og:image:width').get('content', None)
+                if soup.find('meta', property='og:image:width') else None,
+                'image_height': soup.find('meta', property='og:image:height').get('content', None)
+                if soup.find('meta', property='og:image:height') else None,
+                'image_alt': soup.find('meta', property='og:image:alt').get('content', None)
+                if soup.find('meta', property='og:image:alt') else None,
+                'location': "web",
+            }],
+            'audio': soup.find('meta', property='og:audio').get('content', None)
+            if soup.find('meta', property='og:audio') else None,
+            'video': soup.find('meta', property='og:video').get('content', None)
+            if soup.find('meta', property='og:video') else None,
+            'urls': [(soup.find('meta', property='og:url').get('content', None)
+                      if soup.find('meta', property='og:url')
+                      else url)],
+            'updated_time': soup.find('meta', property='og:updated_time').get('content', None)
+            if soup.find('meta', property='og:updated_time') else None,
+            'article_published_time': soup.find('meta', property='article:published_time').get('content', None)
+            if soup.find('meta', property='article:published_time') else None,
+            'article_modified_time': soup.find('meta', property='article:modified_time').get('content', None)
+            if soup.find('meta', property='article:modified_time') else None,
+            'article_tag': soup.find('meta', property='article:tag').get('content', None)
+            if soup.find('meta', property='article:tag') else None,
+            'keywords': get_meta_content('Keywords'),
+        }
 
-    soup = BeautifulSoup(content, 'html.parser')
+        return info
 
-    def get_meta_content(name):
-        tag = soup.find('meta', attrs={'name': name})
-        if tag:
-            return tag.get('content', None)
-        return None
-
-    info = {
-        'title': (soup.find('meta', property='og:title')['content']
-                  if soup.find('meta', property='og:title')
-                  else (soup.title.string if soup.title else "No Title")),
-        'description': (soup.find('meta', property='og:description')['content']
-                        if soup.find('meta', property='og:description')
-                        else get_meta_content('description')),
-        'message': None,
-        'images': [{
-            'image': soup.find('meta', property='og:image')['content']
-                    if soup.find('meta', property='og:image') else None,
-            'image_width': soup.find('meta', property='og:image:width')['content']
-                        if soup.find('meta', property='og:image:width') else None,
-            'image_height': soup.find('meta', property='og:image:height')['content']
-                            if soup.find('meta', property='og:image:height') else None,
-            'image_alt': soup.find('meta', property='og:image:alt')['content']
-                        if soup.find('meta', property='og:image:alt') else None,
-            'location': "web",
-        }],
-        'audio': soup.find('meta', property='og:audio')['content']
-                 if soup.find('meta', property='og:audio') else None,
-        'video': soup.find('meta', property='og:video')['content']
-                 if soup.find('meta', property='og:video') else None,
-        'urls': [(soup.find('meta', property='og:url')['content']
-                if soup.find('meta', property='og:url')
-                else input_url)],
-        'updated_time': soup.find('meta', property='og:updated_time')['content']
-                        if soup.find('meta', property='og:updated_time') else None,
-        'article_published_time': soup.find('meta', property='article:published_time')['content']
-                                  if soup.find('meta', property='article:published_time') else None,
-        'article_modified_time': soup.find('meta', property='article:modified_time')['content']
-                                 if soup.find('meta', property='article:modified_time') else None,
-        'article_tag': soup.find('meta', property='article:tag')['content']
-                       if soup.find('meta', property='article:tag') else None,
-        'keywords': get_meta_content('Keywords'),
-    }
-
-    return info
+    @staticmethod
+    def fetch_page_content(url: str) -> Optional[str]:
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return response.text
+        except requests.RequestException as e:
+            print(f"Failed to fetch the page content from {url}: {e}")
+            return None

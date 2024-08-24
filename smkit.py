@@ -1,13 +1,5 @@
 import argparse
-import modules.generic_module as generic_module
-
-
-def load_module(module_name):
-    try:
-        module = __import__(f'modules.{module_name}_module', fromlist=[''])
-        return module
-    except ImportError:
-        raise ImportError(f"Module '{module_name}' not found. Please ensure it exists in the 'modules' directory.")
+from utils.modules_management import load_module
 
 
 def main():
@@ -35,7 +27,7 @@ def main():
     #         "facebook",
     #         "twitter",
     #                   ],
-    #     "message": "This is a specific message for the post",
+    #     "message": None,
     #     "language": 'en',
     #     # "pages": [
     #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/Barack_Obama.html.zip",
@@ -67,12 +59,13 @@ def main():
 
     if args.module:
         try:
-            module = load_module(args.module.lower())
-            module.handle_module(args)
+            module_instance = load_module(args.module.lower())
+            module_instance.handle_module(args)
         except ImportError as e:
             print(e)
             exit(1)
     else:
+        generic_module = load_module('generic')
         generic_module.handle_module(args)
 
 
