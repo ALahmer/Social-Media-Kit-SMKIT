@@ -4,6 +4,7 @@ from schemas.pageinfo import PageInfo
 from connectors.facebook_connector import post_on_facebook
 from connectors.twitter_connector import post_on_twitter
 from connectors.web_connector import post_on_web
+import requests
 
 
 class BaseModule(ABC):
@@ -58,6 +59,25 @@ class BaseModule(ABC):
             PageInfo: A dictionary containing extracted information like title, description, images, etc.
         """
         pass
+
+    @staticmethod
+    def fetch_page_content(url: str) -> Optional[str]:
+        """
+        Extracts the page content for the given web page.
+
+        Args:
+            url (str): The URL being processed.
+
+        Returns:
+            PageInfo: A dictionary containing extracted information like title, description, images, etc.
+        """
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return response.text
+        except requests.RequestException as e:
+            print(f"Failed to fetch the page content from {url}: {e}")
+            return None
 
     @staticmethod
     def generate_posts(post_info: PageInfo, post_type: List[str], mode: str, language: str) -> None:

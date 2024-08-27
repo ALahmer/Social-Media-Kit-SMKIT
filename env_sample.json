@@ -17,7 +17,8 @@
     },
     "negapedia": {
       "filesystem_website_base_directory": "/var/www/negapedia/en/html",
-      "website_base_url": "http://en.negapedia.org"
+      "website_base_url": "http://en.negapedia.org",
+      "extract_original_charts_images": false
     }
   }
 }

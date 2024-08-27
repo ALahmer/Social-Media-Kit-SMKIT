@@ -2,7 +2,6 @@ from .base_module import BaseModule
 from schemas.pageinfo import PageInfo
 from typing import Any, List, Optional
 from utils.input_validation_management import get_input_parameter_web_urls
-import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -124,13 +123,3 @@ class GenericModule(BaseModule):
         }
 
         return info
-
-    @staticmethod
-    def fetch_page_content(url: str) -> Optional[str]:
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            return response.text
-        except requests.RequestException as e:
-            print(f"Failed to fetch the page content from {url}: {e}")
-            return None

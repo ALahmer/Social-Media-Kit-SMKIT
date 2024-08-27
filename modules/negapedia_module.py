@@ -3,13 +3,18 @@ from schemas.pageinfo import PageInfo
 from typing import Any, List, Optional
 from utils.input_validation_management import get_input_parameter_web_urls
 import time
+from bs4 import BeautifulSoup
+from utils.images_management import save_svg, convert_svg_to_png
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from utils.env_management import load_from_env
 import matplotlib
 from datetime import datetime
+import logging
 
 
 matplotlib.use('TkAgg')
@@ -24,7 +29,7 @@ class NegapediaModule(BaseModule):
     def handle_module(self, args: Any) -> None:
         if not args.pages or not args.post_type or not args.mode or not args.language:
             raise ValueError("Pages, Post Type, Mode and Language are required for negapedia module posting.")
-        print(f"Handling negapedia module for Pages {args.pages}")
+        logging.info(f"Handling negapedia module for Pages {args.pages}")
         self.process_pages(
             urls=args.pages,
             post_type=args.post_type,
@@ -57,21 +62,71 @@ class NegapediaModule(BaseModule):
         self.generate_posts(page_info, post_type, mode, language)
 
     def extract_pages_info(self, urls: List[str]) -> PageInfo:
-        topics_data_array = dict()
-        for url in urls:
-            try:
-                negapedia_string_data = self.get_negapedia_data_array(url)
-                negapedia_data = self.convert_negaranks_to_dicts(negapedia_string_data)
-                topics_data_array[url] = self.filter_useful_negaranks_data(negapedia_data)
-            except Exception as e:
-                print(f"Failed to process NEGARANKS data management for URL={url}: {e}")
-                continue
+        env_data = load_from_env()
+        extract_original_charts_images = env_data.get('modules').get(f'{self.module}').get('extract_original_charts_images')
 
-        # Plotting the data
-        categories = ["conflict", "polemic"]
-        plots_paths = []
-        for category in categories:
-            self.plot_negaraks_data_copilot(category, urls, topics_data_array, plots_paths)
+        if extract_original_charts_images:
+            images = []
+            for url in urls:
+                try:
+                    page_content = self.fetch_page_content(url)
+
+                    if not page_content:
+                        logging.error(f"Failed to fetch page content for URL: {url}")
+                        continue
+
+                    soup = BeautifulSoup(page_content, 'html.parser')
+
+                    # Extract SVGs from specified divs
+                    chart_time_conflict_image_path = self.extract_svg_from_div(soup, url, 'chart_time_conflict')
+                    if chart_time_conflict_image_path:
+                        images.append({
+                            'image': chart_time_conflict_image_path,
+                            'image_width': None,
+                            'image_height': None,
+                            'image_alt': f"Conflict diagram extracted from {url}",
+                            'location': "local",
+                        })
+                    chart_time_polemic_image_path = self.extract_svg_from_div(soup, url, 'chart_time_polemic')
+                    if chart_time_polemic_image_path:
+                        images.append({
+                            'image': chart_time_polemic_image_path,
+                            'image_width': None,
+                            'image_height': None,
+                            'image_alt': f"Polemic diagram extracted from {url}",
+                            'location': "local",
+                        })
+
+                except Exception as e:
+                    logging.error(f"Failed to process SVG extraction for URL={url}: {e}")
+                    continue
+        else:
+            topics_data_array = dict()
+            for url in urls:
+                try:
+                    negapedia_string_data = self.get_negapedia_data_array(url)
+                    negapedia_data = self.convert_negaranks_to_dicts(negapedia_string_data)
+                    topics_data_array[url] = self.filter_useful_negaranks_data(negapedia_data)
+                except Exception as e:
+                    print(f"Failed to process NEGARANKS data management for URL={url}: {e}")
+                    continue
+
+            # Plotting the data
+            categories = ["conflict", "polemic"]
+            plots_paths = []
+            for category in categories:
+                self.plot_negaraks_data_copilot(category, urls, topics_data_array, plots_paths)
+
+            images = []
+            for plot_path in plots_paths:
+                image_info = {
+                    'image': plot_path,
+                    'image_width': None,
+                    'image_height': None,
+                    'image_alt': f"Plot for topic ... ",  # {{to_fix}}
+                    'location': "local",
+                }
+                images.append(image_info)
 
         # Prepare post
         if len(urls) == 1:
@@ -80,17 +135,6 @@ class NegapediaModule(BaseModule):
             topics_str = " and ".join(urls)
         else:
             topics_str = ", ".join(urls[:-1]) + ", and " + urls[-1]
-
-        images = []
-        for plot_path in plots_paths:
-            image_info = {
-                'image': plot_path,
-                'image_width': None,
-                'image_height': None,
-                'image_alt': f"Plot for topic ... ",  # {{to_fix}}
-                'location': "local",
-            }
-            images.append(image_info)
 
         info = {
             'title': "Conflict and polemic levels",
@@ -108,6 +152,64 @@ class NegapediaModule(BaseModule):
         }
 
         return info
+
+    @staticmethod
+    def fetch_page_content(url: str) -> Optional[str]:
+        """
+        Uses Selenium to load the page fully, including dynamic content, and returns the page source.
+        """
+        options = Options()
+        options.add_argument('--headless')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        env_data = load_from_env()
+        chromedriver_path = env_data['chromedriver_path']
+        service = ChromeService(executable_path=chromedriver_path)  # Update with the path to your ChromeDriver
+
+        driver = webdriver.Chrome(service=service, options=options)
+
+        try:
+            driver.get(url)
+            # Wait for both 'chart_time_conflict' and 'chart_time_polemic' divs to be present
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "chart_time_conflict")))
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "chart_time_polemic")))
+
+            # Allow an extra time for SVG rendering to be fully completed
+            time.sleep(5)
+
+            page_content = driver.page_source
+            logging.info(f"Successfully fetched content from URL: {url}")
+            return page_content
+
+        except Exception as e:
+            logging.error(f"Failed to fetch content from {url}: {e}")
+            return None
+
+        finally:
+            driver.quit()
+
+    @staticmethod
+    def extract_svg_from_div(soup, url: str, div_name: str) -> Optional[str]:
+        """
+        Extracts an SVG from a specific div and converts it to PNG.
+        """
+        try:
+            container_div = soup.find('div', id=div_name)
+            if container_div:
+                svg_element = container_div.find('svg')
+                if svg_element:
+                    svg_file_path = save_svg(svg_element, div_name)
+                    png_file_path = convert_svg_to_png(svg_file_path)
+                    logging.info(f"SVG extracted and converted to PNG: {png_file_path} from {url}")
+                    return png_file_path
+                else:
+                    logging.warning(f"No SVG found within the div '{div_name}' for URL={url}")
+            else:
+                logging.warning(f"No div with id '{div_name}' found for URL={url}")
+        except Exception as e:
+            logging.error(f"Error during SVG extraction from div '{div_name}' for URL={url}: {e}")
+        return None
 
     @staticmethod
     def get_negapedia_data_array(url):
