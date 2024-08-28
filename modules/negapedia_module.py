@@ -11,6 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from urllib.parse import urljoin
 from utils.env_management import load_from_env
 import matplotlib
 from datetime import datetime
@@ -67,6 +68,12 @@ class NegapediaModule(BaseModule):
 
         if extract_original_charts_images:
             images = []
+            recent_conflict_levels = []
+            recent_polemic_levels = []
+            words_that_matter = []
+            conflict_awards = []
+            polemic_awards = []
+            social_jumps = []
             for url in urls:
                 try:
                     page_content = self.fetch_page_content(url)
@@ -77,28 +84,17 @@ class NegapediaModule(BaseModule):
 
                     soup = BeautifulSoup(page_content, 'html.parser')
 
-                    # Extract SVGs from specified divs
-                    chart_time_conflict_image_path = self.extract_svg_from_div(soup, url, 'chart_time_conflict')
-                    if chart_time_conflict_image_path:
-                        images.append({
-                            'image': chart_time_conflict_image_path,
-                            'image_width': None,
-                            'image_height': None,
-                            'image_alt': f"Conflict diagram extracted from {url}",
-                            'location': "local",
-                        })
-                    chart_time_polemic_image_path = self.extract_svg_from_div(soup, url, 'chart_time_polemic')
-                    if chart_time_polemic_image_path:
-                        images.append({
-                            'image': chart_time_polemic_image_path,
-                            'image_width': None,
-                            'image_height': None,
-                            'image_alt': f"Polemic diagram extracted from {url}",
-                            'location': "local",
-                        })
+                    self.extract_historical_conflict(soup, url, images)
+                    self.extract_historical_polemic(soup, url, images)
+                    self.extract_recent_conflict(soup, url, recent_conflict_levels)
+                    self.extract_recent_polemic(soup, url, recent_polemic_levels)
+                    self.extract_words_that_matter(soup, url, words_that_matter, 100)
+                    self.extract_conflict_awards(soup, url, conflict_awards, 100)
+                    self.extract_polemic_awards(soup, url, polemic_awards, 100)
+                    self.extract_social_jumps(soup, url, social_jumps, 100)
 
                 except Exception as e:
-                    logging.error(f"Failed to process SVG extraction for URL={url}: {e}")
+                    logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
                     continue
         else:
             topics_data_array = dict()
@@ -152,6 +148,299 @@ class NegapediaModule(BaseModule):
         }
 
         return info
+
+    @staticmethod
+    def extract_historical_conflict(soup, url: str, images: List[dict]) -> None:
+        """
+        Extracts historical conflict SVGs and appends them to the images list.
+        """
+        try:
+            # Extract conflict diagram
+            chart_time_conflict_image_path = NegapediaModule.extract_svg_from_div(soup, url, 'chart_time_conflict')
+            if chart_time_conflict_image_path:
+                images.append({
+                    'image': chart_time_conflict_image_path,
+                    'image_width': None,
+                    'image_height': None,
+                    'image_alt': f"Conflict diagram extracted from {url}",
+                    'location': "local",
+                })
+
+        except Exception as e:
+            logging.error(f"Error during historical conflict SVG extraction for URL={url}: {e}")
+
+    @staticmethod
+    def extract_historical_polemic(soup, url: str, images: List[dict]) -> None:
+        """
+        Extracts historical polemic SVGs and appends them to the images list.
+        """
+        try:
+            # Extract polemic diagram
+            chart_time_polemic_image_path = NegapediaModule.extract_svg_from_div(soup, url, 'chart_time_polemic')
+            if chart_time_polemic_image_path:
+                images.append({
+                    'image': chart_time_polemic_image_path,
+                    'image_width': None,
+                    'image_height': None,
+                    'image_alt': f"Polemic diagram extracted from {url}",
+                    'location': "local",
+                })
+
+        except Exception as e:
+            logging.error(f"Error during historical polemic SVG extraction for URL={url}: {e}")
+
+    @staticmethod
+    def extract_recent_conflict(soup, url: str, conflict_levels: List[dict]) -> None:
+        """
+        Extracts recent conflict level from the 'gauge_conflict_chart' div and appends it to the conflict_levels list.
+        """
+        try:
+            # Locate the div containing the recent conflict data
+            gauge_conflict_div = soup.find('div', id='gauge_conflict_chart')
+            if gauge_conflict_div:
+                # Find the nested <svg> element containing the conflict chart
+                svg_element = gauge_conflict_div.find('svg')
+                if svg_element:
+                    # Find the first <g> element within the SVG
+                    g_element = svg_element.find('g')
+                    if g_element:
+                        # Find the nested <g> element within the first <g> element
+                        nested_g_element = g_element.find('g')
+                        if nested_g_element:
+                            # Extract the text element within the nested <g> element
+                            text_element = nested_g_element.find('text')
+                            if text_element:
+                                conflict_value = text_element.get_text(strip=True)
+                                conflict_levels.append({
+                                    'url': url,
+                                    'conflict_level': conflict_value
+                                })
+                                logging.info(f"Extracted recent conflict level: {conflict_value} from {url}")
+                            else:
+                                logging.warning(
+                                    f"No <text> element found within nested <g> for recent conflict in URL={url}")
+                        else:
+                            logging.warning(f"No nested <g> element found in SVG for recent conflict in URL={url}")
+                    else:
+                        logging.warning(f"No <g> element found in SVG for recent conflict in URL={url}")
+                else:
+                    logging.warning(f"No SVG found within the div 'gauge_conflict_chart' for URL={url}")
+            else:
+                logging.warning(f"No div with id 'gauge_conflict_chart' found for URL={url}")
+        except Exception as e:
+            logging.error(f"Error during recent conflict extraction for URL={url}: {e}")
+
+    @staticmethod
+    def extract_recent_polemic(soup, url: str, polemic_levels: List[dict]) -> None:
+        """
+        Extracts recent polemic level from the 'gauge_polemic_chart' div and appends it to the polemic_levels list.
+        """
+        try:
+            # Locate the div containing the recent polemic data
+            gauge_polemic_div = soup.find('div', id='gauge_polemic_chart')
+            if gauge_polemic_div:
+                # Find the nested <svg> element containing the polemic chart
+                svg_element = gauge_polemic_div.find('svg')
+                if svg_element:
+                    # Find the first <g> element within the SVG
+                    g_element = svg_element.find('g')
+                    if g_element:
+                        # Find the nested <g> element within the first <g> element
+                        nested_g_element = g_element.find('g')
+                        if nested_g_element:
+                            # Extract the text element within the nested <g> element
+                            text_element = nested_g_element.find('text')
+                            if text_element:
+                                polemic_value = text_element.get_text(strip=True)
+                                polemic_levels.append({
+                                    'url': url,
+                                    'polemic_level': polemic_value
+                                })
+                                logging.info(f"Extracted recent polemic level: {polemic_value} from {url}")
+                            else:
+                                logging.warning(
+                                    f"No <text> element found within nested <g> for recent polemic in URL={url}")
+                        else:
+                            logging.warning(f"No nested <g> element found in SVG for recent polemic in URL={url}")
+                    else:
+                        logging.warning(f"No <g> element found in SVG for recent polemic in URL={url}")
+                else:
+                    logging.warning(f"No SVG found within the div 'gauge_polemic_chart' for URL={url}")
+            else:
+                logging.warning(f"No div with id 'gauge_polemic_chart' found for URL={url}")
+        except Exception as e:
+            logging.error(f"Error during recent polemic extraction for URL={url}: {e}")
+
+    @staticmethod
+    def extract_words_that_matter(soup, url: str, words_that_matter: List[dict], top_n: int) -> None:
+        """
+        Extracts the N most important words from the 'the_word_cloud' div and appends them to the important_words list.
+        """
+        try:
+            # Locate the div containing the word cloud data
+            word_cloud_div = soup.find('div', id='the_word_cloud')
+            if word_cloud_div:
+                # Find the nested <svg> element containing the word cloud
+                svg_element = word_cloud_div.find('svg')
+                if svg_element:
+                    # Find all <text> elements within the SVG
+                    text_elements = svg_element.find_all('text')
+
+                    if text_elements:
+                        # Extract the words from the text elements
+                        words = [text_element.get_text(strip=True) for text_element in text_elements]
+
+                        # Sort words by their font size (importance) if needed; here we take the first N words
+                        words_that_matter.extend(words[:top_n])
+
+                        logging.info(f"Extracted top {top_n} important words from {url}: {words_that_matter}")
+                    else:
+                        logging.warning(f"No <text> elements found in SVG for important words in URL={url}")
+                else:
+                    logging.warning(f"No SVG found within the div 'the_word_cloud' for URL={url}")
+            else:
+                logging.warning(f"No div with id 'the_word_cloud' found for URL={url}")
+        except Exception as e:
+            logging.error(f"Error during important words extraction for URL={url}: {e}")
+
+    @staticmethod
+    def extract_conflict_awards(soup, url: str, conflict_awards: List[dict], top_n: int) -> None:
+        """
+        Extracts the conflict awards from the 'infobox' div and appends them to the conflict_awards list.
+        """
+        try:
+            # Locate the div containing the conflict awards data
+            infobox_div = soup.find('div', class_='infobox', attrs={'data-type': 'conflict"'})  #{{to_check}} there's this " after conflict in the HTML, might be an error
+            if infobox_div:
+                # Find the div with the "GLOBAL" awards section
+                global_awards_div = infobox_div.find('div', class_='box-awards')
+                if global_awards_div:
+                    # Extract awards under "GLOBAL (IN ALL WIKIPEDIA)"
+                    award_headers = global_awards_div.find_all('strong')
+
+                    if award_headers:
+                        awards = []
+
+                        # Extract the text from each award header element
+                        for header in award_headers:
+                            award_title = header.get_text(strip=True)
+                            # Find all subsequent <img> elements and extract their 'title' attributes
+                            year_parts = []
+                            for sibling in header.find_next_siblings():
+                                if sibling.name == 'img':
+                                    img_title = sibling.get('title')
+                                    if img_title and img_title.isdigit():  # Check if title is a year
+                                        year_parts.append(img_title)
+                                # Stop if a new <strong> or <hr> element is found (new award starts)
+                                elif sibling.name == 'strong' or sibling.name == 'hr':
+                                    break
+                            # Append years to the award title if they exist
+                            if year_parts:
+                                award_title += f" ({', '.join(year_parts)})"
+                            awards.append(award_title)
+
+                        # Limit the extracted awards to the top N
+                        conflict_awards.extend(awards[:top_n])
+
+                        logging.info(f"Extracted top {top_n} conflict awards from {url}: {conflict_awards}")
+                    else:
+                        logging.warning(f"No <strong> elements found in 'GLOBAL' awards section for URL={url}")
+                else:
+                    logging.warning(f"No 'GLOBAL' awards section found in 'infobox' for URL={url}")
+            else:
+                logging.warning(f"No 'infobox' div with data-type 'conflict' found for URL={url}")
+        except Exception as e:
+            logging.error(f"Error during conflict awards extraction for URL={url}: {e}")
+
+    @staticmethod
+    def extract_polemic_awards(soup, url: str, polemic_awards: List[dict], top_n: int) -> None:
+        """
+        Extracts the polemic awards from the 'infobox' div and appends them to the polemic_awards list.
+        """
+        try:
+            # Locate the div containing the polemic awards data
+            infobox_div = soup.find('div', class_='infobox', attrs={'data-type': 'polemic"'})  #{{to_check}} there's this " after polemic in the HTML, might be an error
+            if infobox_div:
+                # Find the div with the "GLOBAL" awards section
+                global_awards_div = infobox_div.find('div', class_='box-awards')
+                if global_awards_div:
+                    # Extract awards under "GLOBAL (IN ALL WIKIPEDIA)"
+                    award_headers = global_awards_div.find_all('strong')
+
+                    if award_headers:
+                        awards = []
+
+                        # Extract the text from each award header element
+                        for header in award_headers:
+                            award_title = header.get_text(strip=True)
+                            # Find all subsequent <img> elements and extract their 'title' attributes
+                            year_parts = []
+                            for sibling in header.find_next_siblings():
+                                if sibling.name == 'img':
+                                    img_title = sibling.get('title')
+                                    if img_title and img_title.isdigit():  # Check if title is a year
+                                        year_parts.append(img_title)
+                                # Stop if a new <strong> or <hr> element is found (new award starts)
+                                elif sibling.name == 'strong' or sibling.name == 'hr':
+                                    break
+                            # Append years to the award title if they exist
+                            if year_parts:
+                                award_title += f" ({', '.join(year_parts)})"
+                            awards.append(award_title)
+
+                        # Limit the extracted awards to the top N
+                        polemic_awards.extend(awards[:top_n])
+
+                        logging.info(f"Extracted top {top_n} polemic awards from {url}: {polemic_awards}")
+                    else:
+                        logging.warning(f"No <strong> elements found in 'GLOBAL' awards section for URL={url}")
+                else:
+                    logging.warning(f"No 'GLOBAL' awards section found in 'infobox' for URL={url}")
+            else:
+                logging.warning(f"No 'infobox' div with data-type 'polemic' found for URL={url}")
+        except Exception as e:
+            logging.error(f"Error during polemic awards extraction for URL={url}: {e}")
+
+    @staticmethod
+    def extract_social_jumps(soup, url: str, social_jumps: List[dict], top_n: int) -> None:
+        """
+        Extracts the social jumps from the 'social-jumps' div and appends them to the social_jumps list.
+        """
+        try:
+            env_data = load_from_env()
+            base_url = env_data.get('modules').get(f'{NegapediaModule.module}').get('website_base_url')
+
+            # Ensure the base_url is properly formatted
+            if not base_url.endswith('/'):
+                base_url += '/'
+
+            # Locate the div containing the social jumps data
+            social_jumps_div = soup.find('div', id='social-jumps')
+            if social_jumps_div:
+                # Find all the 'dt' elements which contain the social jump links
+                social_jump_entries = social_jumps_div.find_all('dt')
+
+                if social_jump_entries:
+                    jumps = []
+
+                    # Extract the title and link from each 'dt' element
+                    for entry in social_jump_entries:
+                        link_element = entry.find('a')
+                        if link_element:
+                            title = link_element.get_text(strip=True)
+                            link = urljoin(base_url, link_element.get('href'))  # Use urljoin to handle URLs correctly
+                            jumps.append({'title': title, 'link': link})
+
+                    # Limit the extracted social jumps to the top N
+                    social_jumps.extend(jumps[:top_n])
+
+                    logging.info(f"Extracted top {top_n} social jumps from {url}: {social_jumps}")
+                else:
+                    logging.warning(f"No social jump entries found in 'social-jumps' section for URL={url}")
+            else:
+                logging.warning(f"No 'social-jumps' section found for URL={url}")
+        except Exception as e:
+            logging.error(f"Error during social jumps extraction for URL={url}: {e}")
 
     @staticmethod
     def fetch_page_content(url: str) -> Optional[str]:
@@ -293,9 +582,9 @@ class NegapediaModule(BaseModule):
         for topic in topics_data_array:
             data_to_plot[topic] = dict()
             data_to_plot[topic]["years"] = [entry["period"] for entry in topics_data_array[topic] if
-                                            entry['type'] != category]
+                                            entry['type'] == category]
             data_to_plot[topic]["values"] = [entry["measurement_value"] for entry in topics_data_array[topic] if
-                                             entry['type'] != category]
+                                             entry['type'] == category]
         return data_to_plot
 
     @staticmethod
