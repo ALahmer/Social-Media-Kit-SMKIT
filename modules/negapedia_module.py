@@ -66,6 +66,9 @@ class NegapediaModule(BaseModule):
         env_data = load_from_env()
         extract_original_charts_images = env_data.get('modules').get(f'{self.module}').get('extract_original_charts_images')
 
+        # Initialize description with a default value
+        description = None
+
         if extract_original_charts_images:
             images = []
             recent_conflict_levels = []
@@ -92,6 +95,8 @@ class NegapediaModule(BaseModule):
                     self.extract_conflict_awards(soup, url, conflict_awards, 100)
                     self.extract_polemic_awards(soup, url, polemic_awards, 100)
                     self.extract_social_jumps(soup, url, social_jumps, 100)
+
+                    description = self.build_description(recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
 
                 except Exception as e:
                     logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
@@ -132,9 +137,12 @@ class NegapediaModule(BaseModule):
         else:
             topics_str = ", ".join(urls[:-1]) + ", and " + urls[-1]
 
+        if not description:
+            description = f"Topic: {topics_str}"
+
         info = {
             'title': "Conflict and polemic levels",
-            'description': f"Topic: {topics_str}",
+            'description': description,
             'message': None,
             'images': images,
             'audio': None,
@@ -441,6 +449,61 @@ class NegapediaModule(BaseModule):
                 logging.warning(f"No 'social-jumps' section found for URL={url}")
         except Exception as e:
             logging.error(f"Error during social jumps extraction for URL={url}: {e}")
+
+    @staticmethod
+    def build_description(
+            recent_conflict_levels: List[dict],
+            recent_polemic_levels: List[dict],
+            words_that_matter: List[str],
+            conflict_awards: List[str],
+            polemic_awards: List[str],
+            social_jumps: List[dict]
+    ) -> str:
+        # Initialize description string
+        description = ""
+
+        # Add a section for Recent Conflict Levels
+        if recent_conflict_levels:
+            description += "RECENT CONFLICT LEVELS:\n"
+            for item in recent_conflict_levels:
+                description += f" - Conflict Level at {item['url']}: {item['conflict_level']}\n"
+            description += "\n"
+
+        # Add a section for Recent Polemic Levels
+        if recent_polemic_levels:
+            description += "RECENT POLEMIC LEVELS:\n"
+            for item in recent_polemic_levels:
+                description += f" - Polemic Level at {item['url']}: {item['polemic_level']}\n"
+            description += "\n"
+
+        # Add a section for Important Words
+        if words_that_matter:
+            description += "IMPORTANT WORDS (TOP 100):\n"
+            description += ", ".join(words_that_matter[:10]) + "...\n"  # Showing only top 10 for brevity
+            description += "\n"
+
+        # Add a section for Conflict Awards
+        if conflict_awards:
+            description += "CONFLICT AWARDS:\n"
+            for award in conflict_awards:
+                description += f" - {award}\n"
+            description += "\n"
+
+        # Add a section for Polemic Awards
+        if polemic_awards:
+            description += "POLEMIC AWARDS:\n"
+            for award in polemic_awards:
+                description += f" - {award}\n"
+            description += "\n"
+
+        # Add a section for Social Jumps
+        if social_jumps:
+            description += "SOCIAL JUMPS (TOP 100):\n"
+            for jump in social_jumps[:10]:  # Showing only top 10 for brevity
+                description += f" - {jump['title']}: {jump['link']}\n"
+            description += "\n"
+
+        return description
 
     @staticmethod
     def fetch_page_content(url: str) -> Optional[str]:
