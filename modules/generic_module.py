@@ -41,7 +41,7 @@ class GenericModule(BaseModule):
 
         minimum_date = datetime.strptime(minimum_article_modified_date, '%Y-%m-%d') if minimum_article_modified_date else None
 
-        page_info = self.extract_pages_info(web_urls)
+        page_info = self.extract_pages_info(web_urls, mode)
         page_info['message'] = message
 
         if minimum_date:
@@ -59,8 +59,10 @@ class GenericModule(BaseModule):
 
         self.generate_posts(page_info, post_type, mode, language)
 
-    def extract_pages_info(self, urls: List[str]) -> PageInfo:
+    def extract_pages_info(self, urls: List[str], mode: str) -> PageInfo:
+        # as generic module is thinked to be working only on one page, we take just the first url passed
         url = urls[0]
+
         page_content = self.fetch_page_content(url)
 
         if not page_content:

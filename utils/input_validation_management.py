@@ -68,7 +68,7 @@ def process_directory(directory_path, args_remove_suffix, base_dir, base_url):
     Processes all files in a directory, mapping them to their corresponding web URLs.
     """
     web_urls = []
-    for root, _, files in os.walk(directory_path):  # {{to_check}} if order directories and files are in the scanned path, those will be processed...what to do? Exclude all files except html htm and compressed file?
+    for root, _, files in os.walk(directory_path):  # {{to_check}} if other directories and files are in the scanned path, those will be processed...what to do? Exclude all files except html htm and compressed file?
         for filename in files:
             filepath = os.path.join(root, filename)
             web_urls.extend(process_file(filepath, args_remove_suffix, base_dir, base_url))

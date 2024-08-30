@@ -1,5 +1,5 @@
 from .base_module import BaseModule
-from schemas.pageinfo import PageInfo
+from schemas.negapedia_pageinfo import NegapediaPageInfo
 from typing import Any, List, Optional
 from utils.input_validation_management import get_input_parameter_web_urls
 import time
@@ -30,6 +30,19 @@ class NegapediaModule(BaseModule):
     def handle_module(self, args: Any) -> None:
         if not args.pages or not args.post_type or not args.mode or not args.language:
             raise ValueError("Pages, Post Type, Mode and Language are required for negapedia module posting.")
+
+        # Check if the mode is 'summary' and warn if more than one page is provided
+        if args.mode == 'summary':
+            if len(args.pages) > 1:
+                logging.warning(f"More than one URL provided for 'summary' mode. Only the first URL '{args.pages[0]}' will be used.")
+                # Only use the first URL
+                args.pages = [args.pages[0]]
+
+        # Check if the mode is 'comparison' and validate the number of pages
+        elif args.mode == 'comparison':
+            if len(args.pages) != 2:
+                raise ValueError("The 'comparison' mode requires exactly two URLs in the '--pages' argument.")
+
         logging.info(f"Handling negapedia module for Pages {args.pages}")
         self.process_pages(
             urls=args.pages,
@@ -57,27 +70,138 @@ class NegapediaModule(BaseModule):
     ) -> None:
         web_urls = get_input_parameter_web_urls(urls, self.module, remove_suffix, base_directory, base_url)
 
-        page_info = self.extract_pages_info(web_urls)
-        page_info['message'] = message
+        pages_info = self.extract_pages_info(web_urls, mode)
+        # for page_info in pages_info:
+        #     page_info['message']  # {{to_fix}} passiaggio parametro message da sistemare
 
-        self.generate_posts(page_info, post_type, mode, language)
+        self.generate_posts(pages_info, post_type, mode, language)
 
-    def extract_pages_info(self, urls: List[str]) -> PageInfo:
+    def extract_pages_info(self, urls: List[str], mode: str) -> List[NegapediaPageInfo]:
+        # Initialize description with a default value
+        description = None
+        images = []
+
+        if mode == 'summary':
+            # As summary mode is meant to work only on one page, we take just the first URL passed
+            description, images, negapedia_page_info = self.build_summary_mode_post_info(urls)
+            negapedia_pages_info = [negapedia_page_info]
+        elif mode == 'comparison':
+            description, images, negapedia_pages_info = self.build_comparison_mode_post_info(urls)
+        else:
+            error_message = f"Unsupported mode '{mode}' provided. Accepted modes are 'summary' or 'comparison'."
+            logging.error(error_message)
+            raise ValueError(error_message)
+
+        return negapedia_pages_info
+
+    def build_summary_mode_post_info(self, urls: List[str]) -> (str, List[dict], NegapediaPageInfo):
         env_data = load_from_env()
         extract_original_charts_images = env_data.get('modules').get(f'{self.module}').get('extract_original_charts_images')
 
-        # Initialize description with a default value
+        # extract the only url to process
+        url = urls[0]
+
+        # Initialize variables
+        images = []
         description = None
+        negapedia_page_info = None
 
         if extract_original_charts_images:
-            images = []
+            title = None
+            historical_conflict_levels = []
+            historical_polemic_levels = []
             recent_conflict_levels = []
             recent_polemic_levels = []
             words_that_matter = []
             conflict_awards = []
             polemic_awards = []
             social_jumps = []
+            try:
+                page_content = self.fetch_page_content(url)
+
+                if not page_content:
+                    logging.error(f"Failed to fetch page content for URL: {url}")
+                    return description, images
+
+                soup = BeautifulSoup(page_content, 'html.parser')
+
+                title = self.extract_page_title(soup, url)
+                self.extract_historical_conflict(soup, url, historical_conflict_levels)
+                self.extract_historical_polemic(soup, url, historical_polemic_levels)
+                self.extract_recent_conflict(soup, url, recent_conflict_levels)
+                self.extract_recent_polemic(soup, url, recent_polemic_levels)
+                self.extract_words_that_matter(soup, url, words_that_matter, 100)
+                self.extract_conflict_awards(soup, url, conflict_awards, 100)
+                self.extract_polemic_awards(soup, url, polemic_awards, 100)
+                self.extract_social_jumps(soup, url, social_jumps, 100)
+
+                description = self.build_description(recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
+                negapedia_page_info = {
+                    'title': title,
+                    'description': description,
+                    'message': None,
+                    'historical_conflict': historical_conflict_levels,
+                    'historical_polemic': historical_polemic_levels,
+                    'recent_conflict_levels': recent_conflict_levels,
+                    'recent_polemic_levels': recent_polemic_levels,
+                    'words_that_matter': words_that_matter,
+                    'conflict_awards': conflict_awards,
+                    'polemic_awards': polemic_awards,
+                    'social_jumps': social_jumps
+                }
+
+            except Exception as e:
+                logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
+                return description, images
+        else:
+            topics_data_array = dict()
+            try:
+                negapedia_string_data = self.get_negapedia_data_array(url)
+                negapedia_data = self.convert_negaranks_to_dicts(negapedia_string_data)
+                topics_data_array[url] = self.filter_useful_negaranks_data(negapedia_data)
+            except Exception as e:
+                print(f"Failed to process NEGARANKS data management for URL={url}: {e}")
+                return description, images
+
+            # Plotting the data
+            categories = ["conflict", "polemic"]
+            plots_paths = []
+            for category in categories:
+                self.plot_negaraks_data_copilot(category, [url], topics_data_array, plots_paths)
+
+            for plot_path in plots_paths:
+                image_info = {
+                    'image': plot_path,
+                    'image_width': None,
+                    'image_height': None,
+                    'image_alt': f"Plot for topic ... ",  # {{to_fix}}
+                    'location': "local",
+                }
+                images.append(image_info)
+
+        return description, images, negapedia_page_info
+
+    def build_comparison_mode_post_info(self, urls: List[str]) -> (str, List[dict], List[NegapediaPageInfo]):
+        env_data = load_from_env()
+        extract_original_charts_images = env_data.get('modules').get(f'{self.module}').get('extract_original_charts_images')
+
+        # Initialize variables
+        images = []
+        description = None
+        description_parts = []  # List to accumulate descriptions
+        negapedia_pages_info = []
+
+        if extract_original_charts_images:
             for url in urls:
+                title = None
+                historical_conflict_levels = []
+                historical_polemic_levels = []
+                recent_conflict_levels = []
+                recent_polemic_levels = []
+                words_that_matter = []
+                conflict_awards = []
+                polemic_awards = []
+                social_jumps = []
                 try:
                     page_content = self.fetch_page_content(url)
 
@@ -87,8 +211,9 @@ class NegapediaModule(BaseModule):
 
                     soup = BeautifulSoup(page_content, 'html.parser')
 
-                    self.extract_historical_conflict(soup, url, images)
-                    self.extract_historical_polemic(soup, url, images)
+                    title = self.extract_page_title(soup, url)
+                    self.extract_historical_conflict(soup, url, historical_conflict_levels)
+                    self.extract_historical_polemic(soup, url, historical_polemic_levels)
                     self.extract_recent_conflict(soup, url, recent_conflict_levels)
                     self.extract_recent_polemic(soup, url, recent_polemic_levels)
                     self.extract_words_that_matter(soup, url, words_that_matter, 100)
@@ -96,7 +221,23 @@ class NegapediaModule(BaseModule):
                     self.extract_polemic_awards(soup, url, polemic_awards, 100)
                     self.extract_social_jumps(soup, url, social_jumps, 100)
 
-                    description = self.build_description(recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
+                    # Build description for the current URL and add it to description_parts
+                    url_description = self.build_description(recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
+                    description_parts.append(url_description)
+                    negapedia_page_info = {
+                        'title': title,
+                        'description': description,
+                        'message': None,
+                        'historical_conflict': historical_conflict_levels,
+                        'historical_polemic': historical_polemic_levels,
+                        'recent_conflict_levels': recent_conflict_levels,
+                        'recent_polemic_levels': recent_polemic_levels,
+                        'words_that_matter': words_that_matter,
+                        'conflict_awards': conflict_awards,
+                        'polemic_awards': polemic_awards,
+                        'social_jumps': social_jumps
+                    }
+                    negapedia_pages_info.append(negapedia_page_info)
 
                 except Exception as e:
                     logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
@@ -129,33 +270,11 @@ class NegapediaModule(BaseModule):
                 }
                 images.append(image_info)
 
-        # Prepare post
-        if len(urls) == 1:
-            topics_str = urls[0]
-        elif len(urls) == 2:
-            topics_str = " and ".join(urls)
-        else:
-            topics_str = ", ".join(urls[:-1]) + ", and " + urls[-1]
+        # Combine all parts into a single description
+        if description_parts:
+            description = "\n\n".join(description_parts)
 
-        if not description:
-            description = f"Topic: {topics_str}"
-
-        info = {
-            'title': "Conflict and polemic levels",
-            'description': description,
-            'message': None,
-            'images': images,
-            'audio': None,
-            'video': None,
-            'urls': urls,
-            'updated_time': None,
-            'article_published_time': None,
-            'article_modified_time': None,
-            'article_tag': None,
-            'keywords': None,
-        }
-
-        return info
+        return description, images, negapedia_pages_info
 
     @staticmethod
     def extract_historical_conflict(soup, url: str, images: List[dict]) -> None:
@@ -176,6 +295,37 @@ class NegapediaModule(BaseModule):
 
         except Exception as e:
             logging.error(f"Error during historical conflict SVG extraction for URL={url}: {e}")
+
+    @staticmethod
+    def extract_page_title(soup, url: str) -> str:
+        """
+        Extracts the page title from a given BeautifulSoup object.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML content of the page.
+            url (str): The URL of the page.
+
+        Returns:
+            str: The extracted title of the page, or "No Title" if not found.
+        """
+        try:
+            # Find the <h1> element that contains the title
+            h1_element = soup.find('h1')
+            if h1_element:
+                # Find the first <span> element within the <h1> element
+                title_element = h1_element.find('span')
+                if title_element:
+                    title = title_element.get_text(strip=True)
+                    return title
+                else:
+                    logging.warning(f"No title found within <h1> for URL={url}")
+            else:
+                logging.warning(f"No <h1> element found for URL={url}")
+
+        except Exception as e:
+            logging.error(f"Error during page title extraction for URL={url}: {e}")
+
+        return url
 
     @staticmethod
     def extract_historical_polemic(soup, url: str, images: List[dict]) -> None:

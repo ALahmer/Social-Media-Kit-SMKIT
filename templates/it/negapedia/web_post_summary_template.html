@@ -1,0 +1,103 @@
+<!-- web_post_summary_template.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .content-container {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .section-title {
+            font-size: 20px;
+            margin-top: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .media-container video, .media-container audio {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 20px;
+        }
+        .url-list {
+            margin-top: 20px;
+        }
+        .url-list a {
+            color: #333;
+            text-decoration: none;
+        }
+        .url-list a:hover {
+            text-decoration: underline;
+        }
+        .url-list ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Titolo del post: <i>{{title}}</i></h1>
+
+    <!-- Content Container -->
+    <div class="content-container">
+        <!-- Topic Title -->
+        <h2>{{topic1_title}}</h2>
+
+        <!-- Conflict Levels -->
+        <div class="section-title">Conflict Levels</div>
+        <p>{{conflict_levels_1}}</p>
+
+        <!-- Polemic Levels -->
+        <div class="section-title">Polemic Levels</div>
+        <p>{{polemic_levels_1}}</p>
+
+        <!-- Important Words -->
+        <div class="section-title">Important Words</div>
+        <p>{{important_words_1}}</p>
+
+        <!-- Awards -->
+        <div class="section-title">Conflict Awards</div>
+        <p>{{conflict_awards_1}}</p>
+
+        <div class="section-title">Polemic Awards</div>
+        <p>{{polemic_awards_1}}</p>
+
+        <!-- Social Jumps -->
+        <div class="section-title">Social Jumps</div>
+        <p>{{social_jumps_1}}</p>
+
+        <!-- Images for Topic -->
+        <div class="image-container">
+            {{images_1}}
+        </div>
+    </div>
+
+</body>
+</html>

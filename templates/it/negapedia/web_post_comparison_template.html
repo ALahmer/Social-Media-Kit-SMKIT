@@ -1,0 +1,144 @@
+<!-- web_post_comparison_template.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .comparison-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .comparison-column {
+            width: 45%;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .section-title {
+            font-size: 20px;
+            margin-top: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .media-container video, .media-container audio {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 20px;
+        }
+        .url-list {
+            margin-top: 20px;
+        }
+        .url-list a {
+            color: #333;
+            text-decoration: none;
+        }
+        .url-list a:hover {
+            text-decoration: underline;
+        }
+        .url-list ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Title of the post: <i>{{title}}</i></h1>
+
+    <!-- Comparison Container -->
+    <div class="comparison-container">
+        <!-- Column for the first URL -->
+        <div class="comparison-column">
+            <h2>First Topic: {{topic1_title}}</h2>
+
+            <!-- Conflict Levels -->
+            <div class="section-title">Conflict Levels</div>
+            <p>{{conflict_levels_1}}</p>
+
+            <!-- Polemic Levels -->
+            <div class="section-title">Polemic Levels</div>
+            <p>{{polemic_levels_1}}</p>
+
+            <!-- Important Words -->
+            <div class="section-title">Important Words</div>
+            <p>{{important_words_1}}</p>
+
+            <!-- Awards -->
+            <div class="section-title">Conflict Awards</div>
+            <p>{{conflict_awards_1}}</p>
+
+            <div class="section-title">Polemic Awards</div>
+            <p>{{polemic_awards_1}}</p>
+
+            <!-- Social Jumps -->
+            <div class="section-title">Social Jumps</div>
+            <p>{{social_jumps_1}}</p>
+
+            <!-- Images for Topic 1 -->
+            <div class="image-container">
+                {{images_1}}
+            </div>
+        </div>
+
+        <!-- Column for the second URL -->
+        <div class="comparison-column">
+            <h2>Second Topic: {{topic2_title}}</h2>
+
+            <!-- Conflict Levels -->
+            <div class="section-title">Conflict Levels</div>
+            <p>{{conflict_levels_2}}</p>
+
+            <!-- Polemic Levels -->
+            <div class="section-title">Polemic Levels</div>
+            <p>{{polemic_levels_2}}</p>
+
+            <!-- Important Words -->
+            <div class="section-title">Important Words</div>
+            <p>{{important_words_2}}</p>
+
+            <!-- Awards -->
+            <div class="section-title">Conflict Awards</div>
+            <p>{{conflict_awards_2}}</p>
+
+            <div class="section-title">Polemic Awards</div>
+            <p>{{polemic_awards_2}}</p>
+
+            <!-- Social Jumps -->
+            <div class="section-title">Social Jumps</div>
+            <p>{{social_jumps_2}}</p>
+
+            <!-- Images for Topic 2 -->
+            <div class="image-container">
+                {{images_2}}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

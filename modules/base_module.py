@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 from schemas.pageinfo import PageInfo
+from schemas.negapedia_pageinfo import NegapediaPageInfo
 from connectors.facebook_connector import post_on_facebook
 from connectors.twitter_connector import post_on_twitter
 from connectors.web_connector import post_on_web
@@ -48,28 +49,29 @@ class BaseModule(ABC):
         pass
 
     @abstractmethod
-    def extract_pages_info(self, urls: List[str]) -> PageInfo:
+    def extract_pages_info(self, urls: List[str], mode: str) -> PageInfo | List[NegapediaPageInfo]:
         """
         Extracts relevant information from a web page's content.
 
         Args:
             urls (List[str]): The list of URLs being processed.
+            mode (str): The mode to analise topics.
 
         Returns:
-            PageInfo: A dictionary containing extracted information like title, description, images, etc.
+            PageInfo | List[NegapediaPageInfo]: A dictionary containing extracted information like title, description, images, etc.
         """
         pass
 
     @staticmethod
     def fetch_page_content(url: str) -> Optional[str]:
         """
-        Extracts the page content for the given web page.
+        Fetches the HTML content of the given web page.
 
         Args:
-            url (str): The URL being processed.
+            url (str): The URL of the web page to fetch.
 
         Returns:
-            PageInfo: A dictionary containing extracted information like title, description, images, etc.
+            Optional[str]: The HTML content of the page if successfully fetched, otherwise None.
         """
         try:
             response = requests.get(url)
@@ -79,13 +81,12 @@ class BaseModule(ABC):
             print(f"Failed to fetch the page content from {url}: {e}")
             return None
 
-    @staticmethod
-    def generate_posts(post_info: PageInfo, post_type: List[str], mode: str, language: str) -> None:
+    def generate_posts(self, post_info: PageInfo | List[NegapediaPageInfo], post_type: List[str], mode: str, language: str) -> None:
         """
         Generates posts on different platforms based on the extracted information.
 
         Args:
-            post_info (PageInfo): The extracted page information to be posted.
+            post_info (PageInfo | List[NegapediaPageInfo]): The extracted page information to be posted.
             post_type (List[str]): The types of posts to be created (e.g., 'facebook', 'twitter', 'web').
             mode (str): The mode to analise topics which will governate the template to use in the different channels.
             language (str): The language in which to generate the posts.
@@ -99,6 +100,6 @@ class BaseModule(ABC):
             elif channel == 'twitter':
                 post_on_twitter(post_info, language)
             elif channel == 'web':
-                post_on_web(post_info, mode, language)
+                post_on_web(post_info, mode, language, self.module)
             else:
                 print(f"Post type '{channel}' is not supported.")
