@@ -80,6 +80,7 @@ class BaseModule(ABC):
         try:
             response = requests.get(url)
             response.raise_for_status()
+            response.encoding = 'utf-8'
             return response.text
         except requests.RequestException as e:
             print(f"Failed to fetch the page content from {url}: {e}")

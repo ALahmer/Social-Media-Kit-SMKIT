@@ -11,10 +11,10 @@ def post_on_web(post_info, template, language, module):
 
     # Load the HTML template
     if template == 'comparison':
-        with open(f'templates/{language}/{module}/web_post_comparison_template.html', 'r') as template_file:
+        with open(f'templates/{language}/{module}/web_post_comparison_template.html', 'r', encoding='utf-8') as template_file:
             template_content = template_file.read()
     elif template == 'summary':
-        with open(f'templates/{language}/{module}/web_post_summary_template.html', 'r') as template_file:
+        with open(f'templates/{language}/{module}/web_post_summary_template.html', 'r', encoding='utf-8') as template_file:
             template_content = template_file.read()
     else:
         print("Passed template is not accepted.")
@@ -194,8 +194,8 @@ def post_on_web(post_info, template, language, module):
     filename = f"post_{timestamp}.html"
     file_path = os.path.join(output_dir, filename)
 
-    # Write the filled content to the output HTML file
-    with open(file_path, 'w') as output_file:
+    # Write the filled content to the output HTML file using UTF-8 encoding
+    with open(file_path, 'w', encoding='utf-8') as output_file:
         output_file.write(filled_content)
 
     print(f"Web page created successfully: {file_path}")
