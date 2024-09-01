@@ -3,7 +3,6 @@ from schemas.negapedia_pageinfo import NegapediaPageInfo
 from typing import Any, List, Optional, Dict, Union
 from utils.input_validation_management import get_input_parameter_web_urls
 from bs4 import BeautifulSoup
-from utils.images_management import save_svg, convert_svg_to_png
 from urllib.parse import urljoin
 from utils.env_management import load_from_env
 import matplotlib
@@ -519,16 +518,16 @@ class NegapediaModule(BaseModule):
                         # words_that_matter = [word for word, _ in sorted_words[:top_n]]
                         words_that_matter = [word for word, _ in word2tfidf_list[:top_n]]
 
-                        logging.info(f"Extracted top {top_n} important words from {url}: {words_that_matter}")
+                        logging.info(f"Extracted top {top_n} important words for {title} from {url}: {words_that_matter}")
                     except Exception as e:
-                        logging.error(f"Error decoding Word2TFIDF: {e}")
+                        logging.error(f"Error decoding Word2TFIDF for {title} from {url}: {e}")
                 else:
-                    logging.warning("Word2TFIDF variable not found in the script content.")
+                    logging.warning(f"Word2TFIDF variable not found in the script content for {title} from {url}.")
             else:
-                logging.warning("No script tag containing Word2TFIDF variable found.")
+                logging.warning(f"No script tag containing Word2TFIDF variable found for {title} from {url}.")
 
         except Exception as e:
-            logging.error(f"Error during important words extraction for URL={url}: {e}")
+            logging.error(f"Error during important words extraction for {title} from {url}: {e}")
 
         return words_that_matter
 
