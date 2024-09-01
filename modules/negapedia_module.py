@@ -1,6 +1,6 @@
 from .base_module import BaseModule
 from schemas.negapedia_pageinfo import NegapediaPageInfo
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict, Union
 from utils.input_validation_management import get_input_parameter_web_urls
 from bs4 import BeautifulSoup
 from utils.images_management import save_svg, convert_svg_to_png
@@ -23,6 +23,12 @@ class NegapediaModule(BaseModule):
     module = 'negapedia'
 
     def handle_module(self, args: Any) -> None:
+        """
+        Handle the main logic for the negapedia module based on the input arguments.
+
+        Args:
+            args (Any): The arguments passed to the module.
+        """
         if not args.pages or not args.post_type or not args.mode or not args.language:
             raise ValueError("Pages, Post Type, Mode and Language are required for negapedia module posting.")
 
@@ -52,17 +58,31 @@ class NegapediaModule(BaseModule):
         )
 
     def process_pages(
-            self,
-            urls: List[str],
-            post_type: List[str],
-            mode: str,
-            language: str,
-            remove_suffix: Optional[bool] = None,
-            base_directory: Optional[str] = None,
-            base_url: Optional[str] = None,
-            minimum_article_modified_date: Optional[str] = None,
-            message: Optional[str] = None
+        self,
+        urls: List[str],
+        post_type: List[str],
+        mode: str,
+        language: str,
+        remove_suffix: Optional[bool] = None,
+        base_directory: Optional[str] = None,
+        base_url: Optional[str] = None,
+        minimum_article_modified_date: Optional[str] = None,
+        message: Optional[str] = None
     ) -> None:
+        """
+        Processes a list of URLs, extracts page information for each, and generates posts.
+
+        Args:
+            urls (List[str]): The list of URLs to process.
+            post_type (List[str]): The types of posts to create (e.g., 'facebook', 'twitter', 'web').
+            mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
+            language (str): The language in which to generate the posts.
+            remove_suffix (Optional[bool], optional): Flag indicating whether to remove .html or .htm suffixes from URLs.
+            base_directory (Optional[str], optional): The base directory in the filesystem for local processing.
+            base_url (Optional[str], optional): The base URL for mapping local files to web URLs.
+            minimum_article_modified_date (Optional[str], optional): The minimum article modified date for filtering pages (YYYY-MM-DD).
+            message (Optional[str], optional): A custom message to be used in the post, if provided.
+        """
         web_urls = get_input_parameter_web_urls(urls, self.module, remove_suffix, base_directory, base_url)
 
         pages_info = self.extract_pages_info(web_urls, mode)
@@ -72,6 +92,16 @@ class NegapediaModule(BaseModule):
         self.generate_posts(pages_info, post_type, mode, language)
 
     def extract_pages_info(self, urls: List[str], mode: str) -> List[NegapediaPageInfo]:
+        """
+        Extracts relevant information from a list of URLs for the specified mode.
+
+        Args:
+            urls (List[str]): The list of URLs being processed.
+            mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
+
+        Returns:
+            List[NegapediaPageInfo]: A list of dictionaries containing extracted information.
+        """
         # Initialize description with a default value
         description = None
         images = []
@@ -89,7 +119,16 @@ class NegapediaModule(BaseModule):
 
         return negapedia_pages_info
 
-    def build_summary_mode_post_info(self, urls: List[str]) -> (str, List[dict], NegapediaPageInfo):
+    def build_summary_mode_post_info(self, urls: List[str]) -> Union[tuple[str, List[dict], NegapediaPageInfo]]:
+        """
+        Builds the post information in summary mode for the given URL.
+
+        Args:
+            urls (List[str]): The list of URLs being processed.
+
+        Returns:
+            Tuple[str, List[dict], NegapediaPageInfo]: Description, images, and Negapedia page information.
+        """
         env_data = load_from_env()
         number_of_words_that_matter_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
         number_of_conflict_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_conflict_awards_to_extract')
@@ -147,7 +186,16 @@ class NegapediaModule(BaseModule):
 
         return description, images, negapedia_page_info
 
-    def build_comparison_mode_post_info(self, urls: List[str]) -> (str, List[dict], List[NegapediaPageInfo]):
+    def build_comparison_mode_post_info(self, urls: List[str]) -> Union[tuple[str, List[dict], List[NegapediaPageInfo]]]:
+        """
+        Builds the post information in comparison mode for the given URLs.
+
+        Args:
+            urls (List[str]): The list of URLs being processed.
+
+        Returns:
+            Tuple[str, List[dict], List[NegapediaPageInfo]]: Description, images, and Negapedia page information.
+        """
         env_data = load_from_env()
         number_of_words_that_matter_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
         number_of_conflict_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_conflict_awards_to_extract')
@@ -212,7 +260,16 @@ class NegapediaModule(BaseModule):
         return description, images, negapedia_pages_info
 
     @staticmethod
-    def extract_negaranks(soup):
+    def extract_negaranks(soup: BeautifulSoup) -> Optional[List[dict]]:
+        """
+        Extracts the NEGARANKS data from the page content.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML content of the page.
+
+        Returns:
+            Optional[List[dict]]: A list of dictionaries representing NEGARANKS data.
+        """
         # Find the <script> tag that contains the NEGARANKS variable
         script_tag = soup.find('script', text=re.compile(r'var NEGARANKS = \['))
 
@@ -245,10 +302,15 @@ class NegapediaModule(BaseModule):
             return None
 
     @staticmethod
-    def convert_negaranks_to_dict(negaranks_list):
+    def convert_negaranks_to_dict(negaranks_list: List[dict]) -> List[Dict[str, Union[int, str, float]]]:
         """
         Convert a list of negaranks into a list of dictionaries with descriptive keys.
-        Ensures that each value has the correct type as defined in the type mapping.
+
+        Args:
+            negaranks_list (List[dict]): List of NEGARANKS data entries.
+
+        Returns:
+            List[Dict[str, Union[int, str, float]]]: Converted NEGARANKS data.
         """
         # Define the keys corresponding to the values in each negarank entry
         keys = ['ranking', 'percentile', 'normalized_value', 'type', 'category', 'period', 'absolute_value']
@@ -274,7 +336,7 @@ class NegapediaModule(BaseModule):
         return negaranks_dicts
 
     @staticmethod
-    def extract_page_title(soup, url: str) -> str:
+    def extract_page_title(soup: BeautifulSoup, url: str) -> str:
         """
         Extracts the page title from a given BeautifulSoup object.
 
@@ -283,7 +345,7 @@ class NegapediaModule(BaseModule):
             url (str): The URL of the page.
 
         Returns:
-            str: The extracted title of the page, or "No Title" if not found.
+            str: The extracted title of the page, or the URL if not found.
         """
         try:
             # Find the <title> element in the <head> section
@@ -306,7 +368,7 @@ class NegapediaModule(BaseModule):
         return url
 
     @staticmethod
-    def extract_historical_plotted_data(type_check, negaranks_dict, url, title):
+    def extract_historical_plotted_data(type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], url: str, title: str) -> List[dict]:
         """
         Extracts and plots historical conflict data from the NEGARANKS dictionary.
 
@@ -315,6 +377,9 @@ class NegapediaModule(BaseModule):
             negaranks_dict (list): The list of NEGARANKS data entries.
             url (str): The URL of the page.
             title (str): The title of the topic being analyzed.
+
+        Returns:
+            List[dict]: A list containing information about the generated plot image.
         """
         historical_data_levels = []
         # Filter the NEGARANKS data
@@ -339,11 +404,8 @@ class NegapediaModule(BaseModule):
 
         # Add labels and title
         plt.xlabel("Year", fontsize=14)
-        y_label = f"{type_check.capitalize()} level"
-        plt.ylabel(y_label, fontsize=14)
-
-        title_plot = f"Historical {type_check.capitalize()} Levels for {title}"
-        plt.title(title_plot, fontsize=16)
+        plt.ylabel(f"{type_check.capitalize()} level", fontsize=14)
+        plt.title(f"Historical {type_check.capitalize()} Levels for {title}", fontsize=16)
         plt.legend(fontsize=12)
 
         # Adjust x-axis and y-axis ticks
@@ -354,17 +416,14 @@ class NegapediaModule(BaseModule):
         min_y = min(values)
 
         x_tick_step = 1
-        y_tick_step = round(max_y / 10)
-
-        if y_tick_step == 0:
-            y_tick_step = 1
+        y_tick_step = max(1, round(max_y / 10))
 
         plt.xticks(range(min_x - 1, max_x + 1, x_tick_step), fontsize=12)
         plt.yticks(range(0, int(max_y) + 1, y_tick_step), fontsize=12)
 
         # Save the plot as a PNG file
         timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
-        output_filename = title_plot.replace(" ", "_").replace(",", "").replace("-", "") + "_" + timestamp + ".png"
+        output_filename = f"{plot_label.replace(' ', '_').replace(',', '').replace('-', '')}_{timestamp}.png"
         output_path = os.path.join('images_to_post', output_filename)
         plt.tight_layout()
         plt.savefig(output_path)
@@ -384,7 +443,7 @@ class NegapediaModule(BaseModule):
         return historical_data_levels
 
     @staticmethod
-    def extract_recent_data(type_check, negaranks_dict, url, title) -> str | None:
+    def extract_recent_data(type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], url: str, title: str) -> Optional[str]:
         """
         Extracts recent data (conflict or polemic level) from the NEGARANKS dictionary.
 
@@ -418,13 +477,14 @@ class NegapediaModule(BaseModule):
             return None
 
     @staticmethod
-    def extract_words_that_matter(soup, url: str, title: str, top_n: int) -> List[str]:
+    def extract_words_that_matter(soup: BeautifulSoup, url: str, title: str, top_n: int) -> List[str]:
         """
         Extracts the N most important words from the 'Word2TFIDF' JavaScript variable.
 
         Args:
             soup (BeautifulSoup): Parsed HTML content of the page.
             url (str): The URL of the page.
+            title (str): The title of the topic being analyzed.
             top_n (int): The number of top words to extract.
 
         Returns:
@@ -435,9 +495,6 @@ class NegapediaModule(BaseModule):
         try:
             # Find the <script> tag that contains the Word2TFIDF variable
             script_tag = soup.find('script', text=re.compile(r'var Word2TFIDF = new Map\(\[\['))
-
-            # # Find the <script> tag that contains the NEGARANKS variable
-            # script_tag = soup.find('script', text=re.compile(r'var Word2TFIDF = new Map\(\[\['))
 
             if script_tag:
                 # Extract the JavaScript content from the <script> tag
@@ -476,7 +533,7 @@ class NegapediaModule(BaseModule):
         return words_that_matter
 
     @staticmethod
-    def extract_data_awards(type_check, negaranks_dict, url, title, top_n):
+    def extract_data_awards(type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], url: str, title: str, top_n: int) -> Dict[str, List[str]]:
         """
         Extracts awards from the NEGARANKS data for the specified type (conflict or polemic).
 
@@ -575,56 +632,7 @@ class NegapediaModule(BaseModule):
         return awards
 
     @staticmethod
-    def extract_polemic_awards(soup, url: str, polemic_awards: List[dict], top_n: int) -> None:
-        """
-        Extracts the polemic awards from the 'infobox' div and appends them to the polemic_awards list.
-        """
-        try:
-            # Locate the div containing the polemic awards data
-            infobox_div = soup.find('div', class_='infobox', attrs={'data-type': 'polemic"'})  #{{to_check}} there's this " after polemic in the HTML, might be an error
-            if infobox_div:
-                # Find the div with the "GLOBAL" awards section
-                global_awards_div = infobox_div.find('div', class_='box-awards')
-                if global_awards_div:
-                    # Extract awards under "GLOBAL (IN ALL WIKIPEDIA)"
-                    award_headers = global_awards_div.find_all('strong')
-
-                    if award_headers:
-                        awards = []
-
-                        # Extract the text from each award header element
-                        for header in award_headers:
-                            award_title = header.get_text(strip=True)
-                            # Find all subsequent <img> elements and extract their 'title' attributes
-                            year_parts = []
-                            for sibling in header.find_next_siblings():
-                                if sibling.name == 'img':
-                                    img_title = sibling.get('title')
-                                    if img_title and img_title.isdigit():  # Check if title is a year
-                                        year_parts.append(img_title)
-                                # Stop if a new <strong> or <hr> element is found (new award starts)
-                                elif sibling.name == 'strong' or sibling.name == 'hr':
-                                    break
-                            # Append years to the award title if they exist
-                            if year_parts:
-                                award_title += f" ({', '.join(year_parts)})"
-                            awards.append(award_title)
-
-                        # Limit the extracted awards to the top N
-                        polemic_awards.extend(awards[:top_n])
-
-                        logging.info(f"Extracted top {top_n} polemic awards from {url}: {polemic_awards}")
-                    else:
-                        logging.warning(f"No <strong> elements found in 'GLOBAL' awards section for URL={url}")
-                else:
-                    logging.warning(f"No 'GLOBAL' awards section found in 'infobox' for URL={url}")
-            else:
-                logging.warning(f"No 'infobox' div with data-type 'polemic' found for URL={url}")
-        except Exception as e:
-            logging.error(f"Error during polemic awards extraction for URL={url}: {e}")
-
-    @staticmethod
-    def extract_social_jumps(soup, url: str, title: str, top_n: int) -> List[dict]:
+    def extract_social_jumps(soup: BeautifulSoup, url: str, title: str, top_n: int) -> List[dict]:
         """
         Extracts social jumps from the 'social-jumps' div and returns the top N entries.
 
@@ -685,8 +693,8 @@ class NegapediaModule(BaseModule):
             recent_conflict_levels: Optional[str],
             recent_polemic_levels: Optional[str],
             words_that_matter: List[str],
-            conflict_awards: dict,
-            polemic_awards: dict,
+            conflict_awards: Dict[str, List[str]],
+            polemic_awards: Dict[str, List[str]],
             social_jumps: List[dict]
     ) -> str:
         """
@@ -697,8 +705,8 @@ class NegapediaModule(BaseModule):
             recent_conflict_levels (Optional[str]): Recent conflict levels.
             recent_polemic_levels (Optional[str]): Recent polemic levels.
             words_that_matter (List[str]): List of important words.
-            conflict_awards (dict): Conflict awards categorized.
-            polemic_awards (dict): Polemic awards categorized.
+            conflict_awards (Dict[str, List[str]]): Conflict awards categorized.
+            polemic_awards (Dict[str, List[str]]): Polemic awards categorized.
             social_jumps (List[dict]): List of social jumps.
 
         Returns:
@@ -719,7 +727,7 @@ class NegapediaModule(BaseModule):
         # Add a section for Important Words
         if words_that_matter:
             description += "IMPORTANT WORDS (TOP 100):\n"
-            description += ", ".join(words_that_matter[:10]) + "...\n"  # Showing only top 10 for brevity
+            description += ", ".join(words_that_matter) + "...\n"
             description += "\n"
 
         # Add sections for Conflict Awards
@@ -759,7 +767,7 @@ class NegapediaModule(BaseModule):
         # Add a section for Social Jumps
         if social_jumps:
             description += "SOCIAL JUMPS (TOP 100):\n"
-            for jump in social_jumps[:10]:  # Showing only top 10 for brevity
+            for jump in social_jumps:
                 description += f" - {jump['title']}: {jump['link']}\n"
             description += "\n"
 

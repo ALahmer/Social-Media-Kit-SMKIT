@@ -1,6 +1,6 @@
 from .base_module import BaseModule
 from schemas.pageinfo import PageInfo
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict, Union
 from utils.input_validation_management import get_input_parameter_web_urls
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -10,6 +10,12 @@ class GenericModule(BaseModule):
     module = 'generic'
 
     def handle_module(self, args: Any) -> None:
+        """
+        Handles the generic module by processing pages and generating posts.
+
+        Args:
+            args (Any): The input arguments containing pages, post type, mode, language, and other options.
+        """
         if not args.pages or not args.post_type or not args.mode or not args.language:
             raise ValueError("Pages, Post Type, Mode and Language are required for generic module posting.")
         print(f"Handling generic module for Pages {args.pages}")
@@ -37,6 +43,20 @@ class GenericModule(BaseModule):
             minimum_article_modified_date: Optional[str] = None,
             message: Optional[str] = None
     ) -> None:
+        """
+        Processes the provided URLs by extracting page information and generating posts.
+
+        Args:
+            urls (List[str]): The list of URLs to process.
+            post_type (List[str]): The types of posts to create (e.g., 'facebook', 'twitter', 'web').
+            mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
+            language (str): The language in which to generate the posts.
+            remove_suffix (Optional[bool]): Whether to remove suffixes from URLs.
+            base_directory (Optional[str]): The base directory for processing.
+            base_url (Optional[str]): The base URL for mapping local files to web URLs.
+            minimum_article_modified_date (Optional[str]): Minimum article modified date for filtering pages (YYYY-MM-DD).
+            message (Optional[str]): Custom message to be used in the post, if provided.
+        """
         web_urls = get_input_parameter_web_urls(urls, self.module, remove_suffix, base_directory, base_url)
 
         minimum_date = datetime.strptime(minimum_article_modified_date, '%Y-%m-%d') if minimum_article_modified_date else None
@@ -60,6 +80,16 @@ class GenericModule(BaseModule):
         self.generate_posts(page_info, post_type, mode, language)
 
     def extract_pages_info(self, urls: List[str], mode: str) -> PageInfo:
+        """
+        Extracts information from the web page at the given URL.
+
+        Args:
+            urls (List[str]): The list of URLs to extract information from.
+            mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
+
+        Returns:
+            PageInfo: A dictionary containing extracted information like title, description, images, etc.
+        """
         # as generic module is thinked to be working only on one page, we take just the first url passed
         url = urls[0]
 
@@ -83,14 +113,23 @@ class GenericModule(BaseModule):
 
         soup = BeautifulSoup(page_content, 'html.parser')
 
-        def get_meta_content(name):
+        def get_meta_content(name: str) -> Optional[str]:
+            """
+            Helper function to retrieve the content of a meta tag by its name.
+
+            Args:
+                name (str): The name attribute of the meta tag.
+
+            Returns:
+                Optional[str]: The content of the meta tag or None if not found.
+            """
             tag = soup.find('meta', attrs={'name': name})
             return tag.get('content', None) if tag else None
 
-        info = {
+        info: PageInfo = {
             'title': (soup.find('meta', property='og:title').get('content', None)
                       if soup.find('meta', property='og:title')
-                      else (soup.title.string if soup.title else "No Title")),  # {{to_check}} what to put if title can not be retrieved
+                      else (soup.title.string if soup.title else url)),
             'description': (soup.find('meta', property='og:description')['content']
                             if soup.find('meta', property='og:description')
                             else get_meta_content('description')),

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 from schemas.pageinfo import PageInfo
 from schemas.negapedia_pageinfo import NegapediaPageInfo
 from connectors.facebook_connector import post_on_facebook
@@ -16,21 +16,24 @@ class BaseModule(ABC):
         """
         Handle the main logic for the module, based on the input arguments.
         This method must be implemented by any subclass.
+
+        Args:
+            args (Any): Input arguments for the module.
         """
         pass
 
     @abstractmethod
     def process_pages(
-            self,
-            urls: List[str],
-            post_type: List[str],
-            mode: str,
-            language: str,
-            remove_suffix: Optional[bool] = None,
-            base_directory: Optional[str] = None,
-            base_url: Optional[str] = None,
-            minimum_article_modified_date: Optional[str] = None,
-            message: Optional[str] = None
+        self,
+        urls: List[str],
+        post_type: List[str],
+        mode: str,
+        language: str,
+        remove_suffix: Optional[bool] = None,
+        base_directory: Optional[str] = None,
+        base_url: Optional[str] = None,
+        minimum_article_modified_date: Optional[str] = None,
+        message: Optional[str] = None
     ) -> None:
         """
         Processes a list of URLs, extracts page information for each, and generates posts.
@@ -38,27 +41,27 @@ class BaseModule(ABC):
         Args:
             urls (List[str]): The list of URLs to process.
             post_type (List[str]): The types of posts to create (e.g., 'facebook', 'twitter', 'web').
-            mode (str): The mode to analise topics.
+            mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
             language (str): The language in which to generate the posts.
-            remove_suffix (Optional[bool]): Flag indicating whether to remove .html or .htm suffixes from URLs.
-            base_directory (Optional[str]): The base directory in the filesystem for local processing.
-            base_url (Optional[str]): The base URL for mapping local files to web URLs.
-            minimum_article_modified_date (Optional[str]): The minimum article modified date for filtering pages (YYYY-MM-DD).
-            message (Optional[str]): A custom message to be used in the post, if provided.
+            remove_suffix (Optional[bool], optional): Flag indicating whether to remove .html or .htm suffixes from URLs.
+            base_directory (Optional[str], optional): The base directory in the filesystem for local processing.
+            base_url (Optional[str], optional): The base URL for mapping local files to web URLs.
+            minimum_article_modified_date (Optional[str], optional): The minimum article modified date for filtering pages (YYYY-MM-DD).
+            message (Optional[str], optional): A custom message to be used in the post, if provided.
         """
         pass
 
     @abstractmethod
-    def extract_pages_info(self, urls: List[str], mode: str) -> PageInfo | List[NegapediaPageInfo]:
+    def extract_pages_info(self, urls: List[str], mode: str) -> Union[PageInfo, List[NegapediaPageInfo]]:
         """
         Extracts relevant information from a web page's content.
 
         Args:
             urls (List[str]): The list of URLs being processed.
-            mode (str): The mode to analise topics.
+            mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
 
         Returns:
-            PageInfo | List[NegapediaPageInfo]: A dictionary containing extracted information like title, description, images, etc.
+            Union[PageInfo, List[NegapediaPageInfo]]: A dictionary or list of dictionaries containing extracted information like title, description, images, etc.
         """
         pass
 
@@ -81,14 +84,14 @@ class BaseModule(ABC):
             print(f"Failed to fetch the page content from {url}: {e}")
             return None
 
-    def generate_posts(self, post_info: PageInfo | List[NegapediaPageInfo], post_type: List[str], mode: str, language: str) -> None:
+    def generate_posts(self, post_info: Union[PageInfo, List[NegapediaPageInfo]], post_type: List[str], mode: str, language: str) -> None:
         """
         Generates posts on different platforms based on the extracted information.
 
         Args:
-            post_info (PageInfo | List[NegapediaPageInfo]): The extracted page information to be posted.
+            post_info (Union[PageInfo, List[NegapediaPageInfo]]): The extracted page information to be posted.
             post_type (List[str]): The types of posts to be created (e.g., 'facebook', 'twitter', 'web').
-            mode (str): The mode to analise topics which will governate the template to use in the different channels.
+            mode (str): The mode to analyze topics which will govern the template to use in the different channels (e.g., 'comparison', 'summary').
             language (str): The language in which to generate the posts.
         """
         for channel in post_type:
