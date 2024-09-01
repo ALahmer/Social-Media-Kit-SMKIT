@@ -389,6 +389,9 @@ class NegapediaModule(BaseModule):
         Returns:
             List[dict]: A list containing information about the generated plot image.
         """
+        env_data = load_from_env()
+        posts_images_absolute_destination_path = env_data.get('posts_images_absolute_destination_path')
+
         historical_data_levels = []
         # Filter the NEGARANKS data
         filtered_data = [entry for entry in negaranks_dict
@@ -432,7 +435,7 @@ class NegapediaModule(BaseModule):
         # Save the plot as a PNG file
         timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
         output_filename = f"{plot_label.replace(' ', '_').replace(',', '').replace('-', '')}_{timestamp}.png"
-        output_path = os.path.join('images_to_post', output_filename)
+        output_path = os.path.join(posts_images_absolute_destination_path, output_filename)
         plt.tight_layout()
         plt.savefig(output_path)
 
