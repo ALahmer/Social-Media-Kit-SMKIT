@@ -61,8 +61,7 @@ class GenericModule(BaseModule):
 
         minimum_date = datetime.strptime(minimum_article_modified_date, '%Y-%m-%d') if minimum_article_modified_date else None
 
-        page_info = self.extract_pages_info(web_urls, mode)
-        page_info['message'] = message
+        page_info = self.extract_pages_info(web_urls, message, mode)
 
         if minimum_date:
             article_modified_time_str = page_info.get('article_modified_time', None)
@@ -79,12 +78,13 @@ class GenericModule(BaseModule):
 
         self.generate_posts(page_info, post_type, mode, language)
 
-    def extract_pages_info(self, urls: List[str], mode: str) -> PageInfo:
+    def extract_pages_info(self, urls: List[str], message: Optional[str], mode: str) -> PageInfo:
         """
         Extracts information from the web page at the given URL.
 
         Args:
             urls (List[str]): The list of URLs to extract information from.
+            message (Optional[str]): The message to force into the post.
             mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
 
         Returns:
@@ -133,7 +133,7 @@ class GenericModule(BaseModule):
             'description': (soup.find('meta', property='og:description')['content']
                             if soup.find('meta', property='og:description')
                             else get_meta_content('description')),
-            'message': None,
+            'message': message,
             'images': [{
                 'image': soup.find('meta', property='og:image')['content']
                 if soup.find('meta', property='og:image') else None,

@@ -24,7 +24,7 @@ def post_on_web(post_info, template, language, module):
 
     if module == 'generic':     # {{to_fix}} mettere in else senza 'generic'
         title = post_info.get('title') or "No Title"
-        description = post_info.get('message') or post_info.get('description') or "No Description"
+        description = post_info.get('message') or post_info.get('description') or ""
 
         images_html = ''
         for image_info in post_info.get('images', []):
@@ -183,6 +183,10 @@ def post_on_web(post_info, template, language, module):
         else:
             title = f"Summary for {topic1_title} Negapedia page"
         filled_content = filled_content.replace('{{title}}', str(title))
+
+        # Replace placeholders for the page description
+        description = topic1.get('message') or ""
+        filled_content = filled_content.replace('{{description}}', str(description))
 
 
     # Create a unique filename based on the current timestamp

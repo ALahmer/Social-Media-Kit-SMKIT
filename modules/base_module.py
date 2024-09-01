@@ -52,12 +52,13 @@ class BaseModule(ABC):
         pass
 
     @abstractmethod
-    def extract_pages_info(self, urls: List[str], mode: str) -> Union[PageInfo, List[NegapediaPageInfo]]:
+    def extract_pages_info(self, urls: List[str], message: Optional[str], mode: str) -> Union[PageInfo, List[NegapediaPageInfo]]:
         """
         Extracts relevant information from a web page's content.
 
         Args:
             urls (List[str]): The list of URLs being processed.
+            message (Optional[str]): The message to force into the post.
             mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
 
         Returns:

@@ -84,33 +84,28 @@ class NegapediaModule(BaseModule):
         """
         web_urls = get_input_parameter_web_urls(urls, self.module, remove_suffix, base_directory, base_url)
 
-        pages_info = self.extract_pages_info(web_urls, mode)
-        # for page_info in pages_info:
-        #     page_info['message']  # {{to_fix}} passiaggio parametro message da sistemare
+        pages_info = self.extract_pages_info(web_urls, message, mode)
 
         self.generate_posts(pages_info, post_type, mode, language)
 
-    def extract_pages_info(self, urls: List[str], mode: str) -> List[NegapediaPageInfo]:
+    def extract_pages_info(self, urls: List[str], message: Optional[str], mode: str) -> List[NegapediaPageInfo]:
         """
         Extracts relevant information from a list of URLs for the specified mode.
 
         Args:
             urls (List[str]): The list of URLs being processed.
+            message (Optional[str]): The message to force into the post.
             mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
 
         Returns:
             List[NegapediaPageInfo]: A list of dictionaries containing extracted information.
         """
-        # Initialize description with a default value
-        description = None
-        images = []
-
         if mode == 'summary':
             # As summary mode is meant to work only on one page, we take just the first URL passed
-            description, images, negapedia_page_info = self.build_summary_mode_post_info(urls)
+            negapedia_page_info = self.build_summary_mode_post_info(urls, message)
             negapedia_pages_info = [negapedia_page_info]
         elif mode == 'comparison':
-            description, images, negapedia_pages_info = self.build_comparison_mode_post_info(urls)
+            negapedia_pages_info = self.build_comparison_mode_post_info(urls, message)
         else:
             error_message = f"Unsupported mode '{mode}' provided. Accepted modes are 'summary' or 'comparison'."
             logging.error(error_message)
@@ -118,15 +113,16 @@ class NegapediaModule(BaseModule):
 
         return negapedia_pages_info
 
-    def build_summary_mode_post_info(self, urls: List[str]) -> Union[tuple[str, List[dict], NegapediaPageInfo]]:
+    def build_summary_mode_post_info(self, urls: List[str], message: Optional[str]) -> NegapediaPageInfo:
         """
         Builds the post information in summary mode for the given URL.
 
         Args:
             urls (List[str]): The list of URLs being processed.
+            message (Optional[str]): The message to force into the post.
 
         Returns:
-            Tuple[str, List[dict], NegapediaPageInfo]: Description, images, and Negapedia page information.
+            NegapediaPageInfo: Negapedia page information.
         """
         env_data = load_from_env()
         number_of_words_that_matter_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
@@ -138,16 +134,26 @@ class NegapediaModule(BaseModule):
         url = urls[0]
 
         # Initialize variables
-        images = []
-        description = None
-        negapedia_page_info = None
+        negapedia_page_info = {
+            'title': None,
+            'description': None,
+            'message': None,
+            'historical_conflict': [],
+            'historical_polemic': [],
+            'recent_conflict_levels': [],
+            'recent_polemic_levels': [],
+            'words_that_matter': [],
+            'conflict_awards': {},
+            'polemic_awards': {},
+            'social_jumps': []
+        }
 
         try:
             page_content = self.fetch_page_content(url)
 
             if not page_content:
                 logging.error(f"Failed to fetch page content for URL: {url}")
-                return description, images
+                return negapedia_page_info
 
             soup = BeautifulSoup(page_content, 'html.parser')
 
@@ -168,7 +174,7 @@ class NegapediaModule(BaseModule):
             negapedia_page_info = {
                 'title': title,
                 'description': description,
-                'message': None,
+                'message': message,
                 'historical_conflict': historical_conflict_levels,
                 'historical_polemic': historical_polemic_levels,
                 'recent_conflict_levels': recent_conflict_levels,
@@ -181,19 +187,20 @@ class NegapediaModule(BaseModule):
 
         except Exception as e:
             logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
-            return description, images, negapedia_page_info
+            return negapedia_page_info
 
-        return description, images, negapedia_page_info
+        return negapedia_page_info
 
-    def build_comparison_mode_post_info(self, urls: List[str]) -> Union[tuple[str, List[dict], List[NegapediaPageInfo]]]:
+    def build_comparison_mode_post_info(self, urls: List[str], message: Optional[str]) -> List[NegapediaPageInfo]:
         """
         Builds the post information in comparison mode for the given URLs.
 
         Args:
             urls (List[str]): The list of URLs being processed.
+            message (Optional[str]): The message to force into the post.
 
         Returns:
-            Tuple[str, List[dict], List[NegapediaPageInfo]]: Description, images, and Negapedia page information.
+            List[NegapediaPageInfo]: Negapedia page information.
         """
         env_data = load_from_env()
         number_of_words_that_matter_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
@@ -202,7 +209,6 @@ class NegapediaModule(BaseModule):
         number_of_social_jumps_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_social_jumps_to_extract')
 
         # Initialize variables
-        images = []
         description = None
         description_parts = []  # List to accumulate descriptions
         negapedia_pages_info = []
@@ -235,8 +241,8 @@ class NegapediaModule(BaseModule):
                 description_parts.append(url_description)
                 negapedia_page_info = {
                     'title': title,
-                    'description': description,
-                    'message': None,
+                    'description': None,
+                    'message': message,
                     'historical_conflict': historical_conflict_levels,
                     'historical_polemic': historical_polemic_levels,
                     'recent_conflict_levels': recent_conflict_levels,
@@ -256,7 +262,10 @@ class NegapediaModule(BaseModule):
         if description_parts:
             description = "\n\n".join(description_parts)
 
-        return description, images, negapedia_pages_info
+        for negapedia_page_info in negapedia_pages_info:
+            negapedia_page_info['description'] = description
+
+        return negapedia_pages_info
 
     @staticmethod
     def extract_negaranks(soup: BeautifulSoup) -> Optional[List[dict]]:
