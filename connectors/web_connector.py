@@ -96,13 +96,11 @@ def post_on_web(post_info, template, language, module):
 
         # Process first topic
         topic1_title = topic1.get('title', 'Topic 1')
-        # conflict_levels_1 = ', '.join([f"{level['url']}: {level['conflict_level']}" for level in topic1.get('recent_conflict_levels', [])])
-        # polemic_levels_1 = ', '.join([f"{level['url']}: {level['polemic_level']}" for level in topic1.get('recent_polemic_levels', [])])
-        conflict_levels_1 = ', '.join([f"{level['conflict_level']}" for level in topic1.get('recent_conflict_levels', [])])
-        polemic_levels_1 = ', '.join([f"{level['polemic_level']}" for level in topic1.get('recent_polemic_levels', [])])
+        conflict_levels_1 = ', '.join([topic1.get('recent_conflict_levels', [])])
+        polemic_levels_1 = ', '.join([topic1.get('recent_polemic_levels', [])])
         important_words_1 = ', '.join(topic1.get('words_that_matter', []))
-        conflict_awards_1 = ', '.join(topic1.get('conflict_awards', []))
-        polemic_awards_1 = ', '.join(topic1.get('polemic_awards', []))
+        conflict_awards_1 = construct_awards_html(topic1.get('conflict_awards', {}))
+        polemic_awards_1 = construct_awards_html(topic1.get('polemic_awards', {}))
         social_jumps_1 = ', '.join([f"<a href='{jump['link']}'>{jump['title']}</a>" for jump in topic1.get('social_jumps', [])])
 
         images_html_1 = ''
@@ -135,13 +133,11 @@ def post_on_web(post_info, template, language, module):
         # Process second topic if it exists
         if topic2:
             topic2_title = topic2.get('title', 'Topic 2')
-            # conflict_levels_2 = ', '.join([f"{level['url']}: {level['conflict_level']}" for level in topic2.get('recent_conflict_levels', [])])
-            # polemic_levels_2 = ', '.join([f"{level['url']}: {level['polemic_level']}" for level in topic2.get('recent_polemic_levels', [])])
-            conflict_levels_2 = ', '.join([f"{level['conflict_level']}" for level in topic2.get('recent_conflict_levels', [])])
-            polemic_levels_2 = ', '.join([f"{level['polemic_level']}" for level in topic2.get('recent_polemic_levels', [])])
+            conflict_levels_2 = ', '.join([topic2.get('recent_conflict_levels', [])])
+            polemic_levels_2 = ', '.join([topic2.get('recent_polemic_levels', [])])
             important_words_2 = ', '.join(topic2.get('words_that_matter', []))
-            conflict_awards_2 = ', '.join(topic2.get('conflict_awards', []))
-            polemic_awards_2 = ', '.join(topic2.get('polemic_awards', []))
+            conflict_awards_2 = construct_awards_html(topic2.get('conflict_awards', {}))
+            polemic_awards_2 = construct_awards_html(topic2.get('polemic_awards', {}))
             social_jumps_2 = ', '.join([f"<a href='{jump['link']}'>{jump['title']}</a>" for jump in topic2.get('social_jumps', [])])
 
             images_html_2 = ''
@@ -200,3 +196,21 @@ def post_on_web(post_info, template, language, module):
 
     print(f"Web page created successfully: {file_path}")
     return file_path
+
+
+# Constructing awards sections dynamically
+def construct_awards_html(awards_dict):
+    awards_html = ""
+    # Global awards
+    if 'all' in awards_dict and awards_dict['all']:
+        awards_html += "<strong>GLOBAL (IN ALL WIKIPEDIA):</strong><br>"
+        awards_html += "<br>".join([f"- {award}" for award in awards_dict['all']])
+        awards_html += "<br>"
+
+    # Category-specific awards
+    for category, awards in awards_dict.items():
+        if category != 'all' and awards:
+            awards_html += f"<strong>CATEGORY SPECIFIC ({category.upper()}):</strong><br>"
+            awards_html += "<br>".join([f"- {award}" for award in awards])
+            awards_html += "<br>"
+    return awards_html

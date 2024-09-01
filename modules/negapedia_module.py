@@ -2,21 +2,16 @@ from .base_module import BaseModule
 from schemas.negapedia_pageinfo import NegapediaPageInfo
 from typing import Any, List, Optional
 from utils.input_validation_management import get_input_parameter_web_urls
-import time
 from bs4 import BeautifulSoup
 from utils.images_management import save_svg, convert_svg_to_png
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from urllib.parse import urljoin
 from utils.env_management import load_from_env
 import matplotlib
 from datetime import datetime
 import logging
-
+import re
+import json
+import random
 
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -96,7 +91,10 @@ class NegapediaModule(BaseModule):
 
     def build_summary_mode_post_info(self, urls: List[str]) -> (str, List[dict], NegapediaPageInfo):
         env_data = load_from_env()
-        extract_original_charts_images = env_data.get('modules').get(f'{self.module}').get('extract_original_charts_images')
+        number_of_words_that_matter_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
+        number_of_conflict_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_conflict_awards_to_extract')
+        number_of_polemic_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_polemic_awards_to_extract')
+        number_of_social_jumps_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_social_jumps_to_extract')
 
         # extract the only url to process
         url = urls[0]
@@ -106,36 +104,88 @@ class NegapediaModule(BaseModule):
         description = None
         negapedia_page_info = None
 
-        if extract_original_charts_images:
-            title = None
-            historical_conflict_levels = []
-            historical_polemic_levels = []
-            recent_conflict_levels = []
-            recent_polemic_levels = []
-            words_that_matter = []
-            conflict_awards = []
-            polemic_awards = []
-            social_jumps = []
+        try:
+            page_content = self.fetch_page_content(url)
+
+            if not page_content:
+                logging.error(f"Failed to fetch page content for URL: {url}")
+                return description, images
+
+            soup = BeautifulSoup(page_content, 'html.parser')
+
+            negaranks_list = self.extract_negaranks(soup)
+            negaranks_dict = self.convert_negaranks_to_dict(negaranks_list)
+
+            title = self.extract_page_title(soup, url)
+            historical_conflict_levels = self.extract_historical_plotted_data('conflict', negaranks_dict, url, title)
+            historical_polemic_levels = self.extract_historical_plotted_data('polemic', negaranks_dict, url, title)
+            recent_conflict_levels = self.extract_recent_data('conflict', negaranks_dict, url, title)
+            recent_polemic_levels = self.extract_recent_data('polemic', negaranks_dict, url, title)
+            words_that_matter = self.extract_words_that_matter(soup, url, title, number_of_words_that_matter_to_extract)
+            conflict_awards = self.extract_data_awards('conflict', negaranks_dict, url, title, number_of_conflict_awards_to_extract)
+            polemic_awards = self.extract_data_awards('polemic', negaranks_dict, url, title, number_of_polemic_awards_to_extract)
+            social_jumps = self.extract_social_jumps(soup, url, title, number_of_social_jumps_to_extract)
+
+            description = self.build_description(title, recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
+            negapedia_page_info = {
+                'title': title,
+                'description': description,
+                'message': None,
+                'historical_conflict': historical_conflict_levels,
+                'historical_polemic': historical_polemic_levels,
+                'recent_conflict_levels': recent_conflict_levels,
+                'recent_polemic_levels': recent_polemic_levels,
+                'words_that_matter': words_that_matter,
+                'conflict_awards': conflict_awards,
+                'polemic_awards': polemic_awards,
+                'social_jumps': social_jumps
+            }
+
+        except Exception as e:
+            logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
+            return description, images, negapedia_page_info
+
+        return description, images, negapedia_page_info
+
+    def build_comparison_mode_post_info(self, urls: List[str]) -> (str, List[dict], List[NegapediaPageInfo]):
+        env_data = load_from_env()
+        number_of_words_that_matter_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
+        number_of_conflict_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_conflict_awards_to_extract')
+        number_of_polemic_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_polemic_awards_to_extract')
+        number_of_social_jumps_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_social_jumps_to_extract')
+
+        # Initialize variables
+        images = []
+        description = None
+        description_parts = []  # List to accumulate descriptions
+        negapedia_pages_info = []
+
+        for url in urls:
             try:
                 page_content = self.fetch_page_content(url)
 
                 if not page_content:
                     logging.error(f"Failed to fetch page content for URL: {url}")
-                    return description, images
+                    continue
 
                 soup = BeautifulSoup(page_content, 'html.parser')
 
-                title = self.extract_page_title(soup, url)
-                self.extract_historical_conflict(soup, url, historical_conflict_levels)
-                self.extract_historical_polemic(soup, url, historical_polemic_levels)
-                self.extract_recent_conflict(soup, url, recent_conflict_levels)
-                self.extract_recent_polemic(soup, url, recent_polemic_levels)
-                self.extract_words_that_matter(soup, url, words_that_matter, 100)
-                self.extract_conflict_awards(soup, url, conflict_awards, 100)
-                self.extract_polemic_awards(soup, url, polemic_awards, 100)
-                self.extract_social_jumps(soup, url, social_jumps, 100)
+                negaranks_list = self.extract_negaranks(soup)
+                negaranks_dict = self.convert_negaranks_to_dict(negaranks_list)
 
-                description = self.build_description(recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
+                title = self.extract_page_title(soup, url)
+                historical_conflict_levels = self.extract_historical_plotted_data('conflict', negaranks_dict, url, title)
+                historical_polemic_levels = self.extract_historical_plotted_data('polemic', negaranks_dict, url, title)
+                recent_conflict_levels = self.extract_recent_data('conflict', negaranks_dict, url, title)
+                recent_polemic_levels = self.extract_recent_data('polemic', negaranks_dict, url, title)
+                words_that_matter = self.extract_words_that_matter(soup, url, title, number_of_words_that_matter_to_extract)
+                conflict_awards = self.extract_data_awards('conflict', negaranks_dict, url, title, number_of_conflict_awards_to_extract)
+                polemic_awards = self.extract_data_awards('polemic', negaranks_dict, url, title, number_of_polemic_awards_to_extract)
+                social_jumps = self.extract_social_jumps(soup, url, title, number_of_social_jumps_to_extract)
+
+                # Build description for the current URL and add it to description_parts
+                url_description = self.build_description(title, recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
+                description_parts.append(url_description)
                 negapedia_page_info = {
                     'title': title,
                     'description': description,
@@ -149,126 +199,11 @@ class NegapediaModule(BaseModule):
                     'polemic_awards': polemic_awards,
                     'social_jumps': social_jumps
                 }
+                negapedia_pages_info.append(negapedia_page_info)
 
             except Exception as e:
                 logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
-                return description, images
-        else:
-            topics_data_array = dict()
-            try:
-                negapedia_string_data = self.get_negapedia_data_array(url)
-                negapedia_data = self.convert_negaranks_to_dicts(negapedia_string_data)
-                topics_data_array[url] = self.filter_useful_negaranks_data(negapedia_data)
-            except Exception as e:
-                print(f"Failed to process NEGARANKS data management for URL={url}: {e}")
-                return description, images
-
-            # Plotting the data
-            categories = ["conflict", "polemic"]
-            plots_paths = []
-            for category in categories:
-                self.plot_negaraks_data_copilot(category, [url], topics_data_array, plots_paths)
-
-            for plot_path in plots_paths:
-                image_info = {
-                    'image': plot_path,
-                    'image_width': None,
-                    'image_height': None,
-                    'image_alt': f"Plot for topic ... ",  # {{to_fix}}
-                    'location': "local",
-                }
-                images.append(image_info)
-
-        return description, images, negapedia_page_info
-
-    def build_comparison_mode_post_info(self, urls: List[str]) -> (str, List[dict], List[NegapediaPageInfo]):
-        env_data = load_from_env()
-        extract_original_charts_images = env_data.get('modules').get(f'{self.module}').get('extract_original_charts_images')
-
-        # Initialize variables
-        images = []
-        description = None
-        description_parts = []  # List to accumulate descriptions
-        negapedia_pages_info = []
-
-        if extract_original_charts_images:
-            for url in urls:
-                title = None
-                historical_conflict_levels = []
-                historical_polemic_levels = []
-                recent_conflict_levels = []
-                recent_polemic_levels = []
-                words_that_matter = []
-                conflict_awards = []
-                polemic_awards = []
-                social_jumps = []
-                try:
-                    page_content = self.fetch_page_content(url)
-
-                    if not page_content:
-                        logging.error(f"Failed to fetch page content for URL: {url}")
-                        continue
-
-                    soup = BeautifulSoup(page_content, 'html.parser')
-
-                    title = self.extract_page_title(soup, url)
-                    self.extract_historical_conflict(soup, url, historical_conflict_levels)
-                    self.extract_historical_polemic(soup, url, historical_polemic_levels)
-                    self.extract_recent_conflict(soup, url, recent_conflict_levels)
-                    self.extract_recent_polemic(soup, url, recent_polemic_levels)
-                    self.extract_words_that_matter(soup, url, words_that_matter, 100)
-                    self.extract_conflict_awards(soup, url, conflict_awards, 100)
-                    self.extract_polemic_awards(soup, url, polemic_awards, 100)
-                    self.extract_social_jumps(soup, url, social_jumps, 100)
-
-                    # Build description for the current URL and add it to description_parts
-                    url_description = self.build_description(recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
-                    description_parts.append(url_description)
-                    negapedia_page_info = {
-                        'title': title,
-                        'description': description,
-                        'message': None,
-                        'historical_conflict': historical_conflict_levels,
-                        'historical_polemic': historical_polemic_levels,
-                        'recent_conflict_levels': recent_conflict_levels,
-                        'recent_polemic_levels': recent_polemic_levels,
-                        'words_that_matter': words_that_matter,
-                        'conflict_awards': conflict_awards,
-                        'polemic_awards': polemic_awards,
-                        'social_jumps': social_jumps
-                    }
-                    negapedia_pages_info.append(negapedia_page_info)
-
-                except Exception as e:
-                    logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
-                    continue
-        else:
-            topics_data_array = dict()
-            for url in urls:
-                try:
-                    negapedia_string_data = self.get_negapedia_data_array(url)
-                    negapedia_data = self.convert_negaranks_to_dicts(negapedia_string_data)
-                    topics_data_array[url] = self.filter_useful_negaranks_data(negapedia_data)
-                except Exception as e:
-                    print(f"Failed to process NEGARANKS data management for URL={url}: {e}")
-                    continue
-
-            # Plotting the data
-            categories = ["conflict", "polemic"]
-            plots_paths = []
-            for category in categories:
-                self.plot_negaraks_data_copilot(category, urls, topics_data_array, plots_paths)
-
-            images = []
-            for plot_path in plots_paths:
-                image_info = {
-                    'image': plot_path,
-                    'image_width': None,
-                    'image_height': None,
-                    'image_alt': f"Plot for topic ... ",  # {{to_fix}}
-                    'location': "local",
-                }
-                images.append(image_info)
+                continue
 
         # Combine all parts into a single description
         if description_parts:
@@ -277,24 +212,66 @@ class NegapediaModule(BaseModule):
         return description, images, negapedia_pages_info
 
     @staticmethod
-    def extract_historical_conflict(soup, url: str, images: List[dict]) -> None:
-        """
-        Extracts historical conflict SVGs and appends them to the images list.
-        """
-        try:
-            # Extract conflict diagram
-            chart_time_conflict_image_path = NegapediaModule.extract_svg_from_div(soup, url, 'chart_time_conflict')
-            if chart_time_conflict_image_path:
-                images.append({
-                    'image': chart_time_conflict_image_path,
-                    'image_width': None,
-                    'image_height': None,
-                    'image_alt': f"Conflict diagram extracted from {url}",
-                    'location': "local",
-                })
+    def extract_negaranks(soup):
+        # Find the <script> tag that contains the NEGARANKS variable
+        script_tag = soup.find('script', text=re.compile(r'var NEGARANKS = \['))
 
-        except Exception as e:
-            logging.error(f"Error during historical conflict SVG extraction for URL={url}: {e}")
+        if script_tag:
+            # Extract the JavaScript content from the <script> tag
+            script_content = script_tag.get_text()  # Use get_text() to ensure we capture all content
+
+            # Use regex to find the NEGARANKS array, with re.DOTALL to match multiline content
+            negaranks_match = re.search(r'var NEGARANKS = (\[.*\]);', script_content, re.DOTALL)
+
+            if negaranks_match:
+                # Extract the NEGARANKS array string
+                negaranks_string = negaranks_match.group(1)
+
+                # Remove any trailing commas before closing brackets to conform to JSON standards
+                negaranks_string = re.sub(r',\s*]', ']', negaranks_string)
+
+                # Convert the JavaScript array string to a Python list
+                try:
+                    negaranks_list = json.loads(negaranks_string)
+                    return negaranks_list
+                except json.JSONDecodeError as e:
+                    print(f"Error decoding NEGARANKS: {e}")
+                    return None
+            else:
+                print("NEGARANKS variable not found in the script content.")
+                return None
+        else:
+            print("No script tag containing NEGARANKS variable found.")
+            return None
+
+    @staticmethod
+    def convert_negaranks_to_dict(negaranks_list):
+        """
+        Convert a list of negaranks into a list of dictionaries with descriptive keys.
+        Ensures that each value has the correct type as defined in the type mapping.
+        """
+        # Define the keys corresponding to the values in each negarank entry
+        keys = ['ranking', 'percentile', 'normalized_value', 'type', 'category', 'period', 'absolute_value']
+
+        # Define the desired type for each key
+        type_mapping = {
+            'ranking': int,
+            'percentile': int,
+            'normalized_value': int,
+            'type': str,
+            'category': str,
+            'period': str,
+            'absolute_value': float
+        }
+
+        # Convert each entry in the negaranks_list to a dictionary with correct types
+        negaranks_dicts = []
+        for entry in negaranks_list:
+            # Cast each value to the desired type using the type mapping
+            entry_dict = {key: type_mapping[key](value) for key, value in zip(keys, entry)}
+            negaranks_dicts.append(entry_dict)
+
+        return negaranks_dicts
 
     @staticmethod
     def extract_page_title(soup, url: str) -> str:
@@ -309,206 +286,293 @@ class NegapediaModule(BaseModule):
             str: The extracted title of the page, or "No Title" if not found.
         """
         try:
-            # Find the <h1> element that contains the title
-            h1_element = soup.find('h1')
-            if h1_element:
-                # Find the first <span> element within the <h1> element
-                title_element = h1_element.find('span')
-                if title_element:
-                    title = title_element.get_text(strip=True)
-                    return title
-                else:
-                    logging.warning(f"No title found within <h1> for URL={url}")
+            # Find the <title> element in the <head> section
+            title_element = soup.find('title')
+            if title_element:
+                title = title_element.get_text(strip=True)
+
+                # Strip the suffix " - Negapedia" if present
+                if " - Negapedia" in title:
+                    title = title.replace(" - Negapedia", "")
+
+                return title
             else:
-                logging.warning(f"No <h1> element found for URL={url}")
+                logging.warning(f"No <title> element found for URL={url}")
 
         except Exception as e:
             logging.error(f"Error during page title extraction for URL={url}: {e}")
 
+        # Return a default value if no title is found
         return url
 
     @staticmethod
-    def extract_historical_polemic(soup, url: str, images: List[dict]) -> None:
+    def extract_historical_plotted_data(type_check, negaranks_dict, url, title):
         """
-        Extracts historical polemic SVGs and appends them to the images list.
-        """
-        try:
-            # Extract polemic diagram
-            chart_time_polemic_image_path = NegapediaModule.extract_svg_from_div(soup, url, 'chart_time_polemic')
-            if chart_time_polemic_image_path:
-                images.append({
-                    'image': chart_time_polemic_image_path,
-                    'image_width': None,
-                    'image_height': None,
-                    'image_alt': f"Polemic diagram extracted from {url}",
-                    'location': "local",
-                })
+        Extracts and plots historical conflict data from the NEGARANKS dictionary.
 
-        except Exception as e:
-            logging.error(f"Error during historical polemic SVG extraction for URL={url}: {e}")
+        Args:
+            type_check (str): The type of data to extract ('conflict' or 'polemic').
+            negaranks_dict (list): The list of NEGARANKS data entries.
+            url (str): The URL of the page.
+            title (str): The title of the topic being analyzed.
+        """
+        historical_data_levels = []
+        # Filter the NEGARANKS data
+        filtered_data = [entry for entry in negaranks_dict
+                         if entry['type'] == type_check and
+                         entry['category'] == 'all' and
+                         entry['period'] != 'all' and
+                         entry['period'] != str(datetime.now().year)]
+
+        years = [int(entry['period']) for entry in filtered_data]
+        values = [entry['absolute_value'] for entry in filtered_data]
+
+        # Create line plots
+        plt.figure(figsize=(14, 8), dpi=100)
+
+        years_to_plot = years
+        values_to_plot = values
+        plot_label = f"Historical {type_check.capitalize()} Levels for {title}"
+        # Select a random color from the color palette
+        plot_color = random.choice(sns.color_palette("husl", 100))
+        plt.plot(years_to_plot, values_to_plot, label=plot_label, color=plot_color, marker="o", linestyle='-')
+
+        # Add labels and title
+        plt.xlabel("Year", fontsize=14)
+        y_label = f"{type_check.capitalize()} level"
+        plt.ylabel(y_label, fontsize=14)
+
+        title_plot = f"Historical {type_check.capitalize()} Levels for {title}"
+        plt.title(title_plot, fontsize=16)
+        plt.legend(fontsize=12)
+
+        # Adjust x-axis and y-axis ticks
+        plt.grid(True, linestyle='--', linewidth=0.5)
+        max_x = max(years)
+        min_x = min(years)
+        max_y = max(values)
+        min_y = min(values)
+
+        x_tick_step = 1
+        y_tick_step = round(max_y / 10)
+
+        if y_tick_step == 0:
+            y_tick_step = 1
+
+        plt.xticks(range(min_x - 1, max_x + 1, x_tick_step), fontsize=12)
+        plt.yticks(range(0, int(max_y) + 1, y_tick_step), fontsize=12)
+
+        # Save the plot as a PNG file
+        timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
+        output_filename = title_plot.replace(" ", "_").replace(",", "").replace("-", "") + "_" + timestamp + ".png"
+        output_path = os.path.join('images_to_post', output_filename)
+        plt.tight_layout()
+        plt.savefig(output_path)
+
+        historical_data_levels.append({
+            "image": output_path,
+            'image_width': None,
+            'image_height': None,
+            'image_alt': f"Historical {type_check.capitalize()} Levels for {title}",
+            'location': "local",
+        })
+
+        # Optionally show the plot
+        # plt.show()
+
+        print(f"Historical {type_check.capitalize()} Levels plot for {url} saved at: {output_path}")
+        return historical_data_levels
 
     @staticmethod
-    def extract_recent_conflict(soup, url: str, conflict_levels: List[dict]) -> None:
+    def extract_recent_data(type_check, negaranks_dict, url, title) -> str | None:
         """
-        Extracts recent conflict level from the 'gauge_conflict_chart' div and appends it to the conflict_levels list.
+        Extracts recent data (conflict or polemic level) from the NEGARANKS dictionary.
+
+        Args:
+            type_check (str): The type of data to extract ('conflict' or 'polemic').
+            negaranks_dict (list): The list of NEGARANKS data entries.
+            url (str): The URL of the page.
+            title (str): The title of the topic being analyzed.
+
+        Returns:
+            Optional[str]: The extracted data level or None if not found.
         """
         try:
-            # Locate the div containing the recent conflict data
-            gauge_conflict_div = soup.find('div', id='gauge_conflict_chart')
-            if gauge_conflict_div:
-                # Find the nested <svg> element containing the conflict chart
-                svg_element = gauge_conflict_div.find('svg')
-                if svg_element:
-                    # Find the first <g> element within the SVG
-                    g_element = svg_element.find('g')
-                    if g_element:
-                        # Find the nested <g> element within the first <g> element
-                        nested_g_element = g_element.find('g')
-                        if nested_g_element:
-                            # Extract the text element within the nested <g> element
-                            text_element = nested_g_element.find('text')
-                            if text_element:
-                                conflict_value = text_element.get_text(strip=True)
-                                conflict_levels.append({
-                                    'url': url,
-                                    'conflict_level': conflict_value
-                                })
-                                logging.info(f"Extracted recent conflict level: {conflict_value} from {url}")
-                            else:
-                                logging.warning(
-                                    f"No <text> element found within nested <g> for recent conflict in URL={url}")
-                        else:
-                            logging.warning(f"No nested <g> element found in SVG for recent conflict in URL={url}")
-                    else:
-                        logging.warning(f"No <g> element found in SVG for recent conflict in URL={url}")
-                else:
-                    logging.warning(f"No SVG found within the div 'gauge_conflict_chart' for URL={url}")
+            # Filter the NEGARANKS data for the current year and the specified type
+            recent_data = [
+                entry for entry in negaranks_dict
+                if entry['type'] == type_check and entry['category'] == 'all' and entry['period'] == str(datetime.now().year)
+            ]
+
+            if recent_data:
+                # Extract the 'normalized_value' from the recent data
+                normalized_value = recent_data[0]['normalized_value']
+                logging.info(f"Extracted recent {type_check} level: {normalized_value} for {title} from {url}")
+                return str(normalized_value)
             else:
-                logging.warning(f"No div with id 'gauge_conflict_chart' found for URL={url}")
+                logging.warning(f"No recent {type_check} data found for {title} in year {str(datetime.now().year)} from {url}")
+                return None
+
         except Exception as e:
-            logging.error(f"Error during recent conflict extraction for URL={url}: {e}")
+            logging.error(f"Error during recent {type_check} extraction for {title} from {url}: {e}")
+            return None
 
     @staticmethod
-    def extract_recent_polemic(soup, url: str, polemic_levels: List[dict]) -> None:
+    def extract_words_that_matter(soup, url: str, title: str, top_n: int) -> List[str]:
         """
-        Extracts recent polemic level from the 'gauge_polemic_chart' div and appends it to the polemic_levels list.
+        Extracts the N most important words from the 'Word2TFIDF' JavaScript variable.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML content of the page.
+            url (str): The URL of the page.
+            top_n (int): The number of top words to extract.
+
+        Returns:
+            List[str]: A list of the most important words.
         """
+        words_that_matter = []
+
         try:
-            # Locate the div containing the recent polemic data
-            gauge_polemic_div = soup.find('div', id='gauge_polemic_chart')
-            if gauge_polemic_div:
-                # Find the nested <svg> element containing the polemic chart
-                svg_element = gauge_polemic_div.find('svg')
-                if svg_element:
-                    # Find the first <g> element within the SVG
-                    g_element = svg_element.find('g')
-                    if g_element:
-                        # Find the nested <g> element within the first <g> element
-                        nested_g_element = g_element.find('g')
-                        if nested_g_element:
-                            # Extract the text element within the nested <g> element
-                            text_element = nested_g_element.find('text')
-                            if text_element:
-                                polemic_value = text_element.get_text(strip=True)
-                                polemic_levels.append({
-                                    'url': url,
-                                    'polemic_level': polemic_value
-                                })
-                                logging.info(f"Extracted recent polemic level: {polemic_value} from {url}")
-                            else:
-                                logging.warning(
-                                    f"No <text> element found within nested <g> for recent polemic in URL={url}")
-                        else:
-                            logging.warning(f"No nested <g> element found in SVG for recent polemic in URL={url}")
-                    else:
-                        logging.warning(f"No <g> element found in SVG for recent polemic in URL={url}")
-                else:
-                    logging.warning(f"No SVG found within the div 'gauge_polemic_chart' for URL={url}")
-            else:
-                logging.warning(f"No div with id 'gauge_polemic_chart' found for URL={url}")
-        except Exception as e:
-            logging.error(f"Error during recent polemic extraction for URL={url}: {e}")
+            # Find the <script> tag that contains the Word2TFIDF variable
+            script_tag = soup.find('script', text=re.compile(r'var Word2TFIDF = new Map\(\[\['))
 
-    @staticmethod
-    def extract_words_that_matter(soup, url: str, words_that_matter: List[dict], top_n: int) -> None:
-        """
-        Extracts the N most important words from the 'the_word_cloud' div and appends them to the important_words list.
-        """
-        try:
-            # Locate the div containing the word cloud data
-            word_cloud_div = soup.find('div', id='the_word_cloud')
-            if word_cloud_div:
-                # Find the nested <svg> element containing the word cloud
-                svg_element = word_cloud_div.find('svg')
-                if svg_element:
-                    # Find all <text> elements within the SVG
-                    text_elements = svg_element.find_all('text')
+            # # Find the <script> tag that contains the NEGARANKS variable
+            # script_tag = soup.find('script', text=re.compile(r'var Word2TFIDF = new Map\(\[\['))
 
-                    if text_elements:
-                        # Extract the words from the text elements
-                        words = [text_element.get_text(strip=True) for text_element in text_elements]
+            if script_tag:
+                # Extract the JavaScript content from the <script> tag
+                script_content = script_tag.string
 
-                        # Sort words by their font size (importance) if needed; here we take the first N words
-                        words_that_matter.extend(words[:top_n])
+                # Use regex to find the Word2TFIDF map
+                word2tfidf_match = re.search(r'var Word2TFIDF = new Map\((\[.*?\])\);', script_content, re.DOTALL)
+
+                if word2tfidf_match:
+                    # Extract the Word2TFIDF string
+                    word2tfidf_string = word2tfidf_match.group(1)
+
+                    # Convert the JavaScript array string to a Python list of tuples
+                    try:
+                        # Use eval to convert the list of tuples to a Python object safely
+                        word2tfidf_list = eval(word2tfidf_string)
+
+                        # Sort the words by their TF-IDF values (second element in each tuple) in descending order
+                        # sorted_words = sorted(word2tfidf_list, key=lambda x: x[1], reverse=True)
+
+                        # Extract the top N words
+                        # words_that_matter = [word for word, _ in sorted_words[:top_n]]
+                        words_that_matter = [word for word, _ in word2tfidf_list[:top_n]]
 
                         logging.info(f"Extracted top {top_n} important words from {url}: {words_that_matter}")
-                    else:
-                        logging.warning(f"No <text> elements found in SVG for important words in URL={url}")
+                    except Exception as e:
+                        logging.error(f"Error decoding Word2TFIDF: {e}")
                 else:
-                    logging.warning(f"No SVG found within the div 'the_word_cloud' for URL={url}")
+                    logging.warning("Word2TFIDF variable not found in the script content.")
             else:
-                logging.warning(f"No div with id 'the_word_cloud' found for URL={url}")
+                logging.warning("No script tag containing Word2TFIDF variable found.")
+
         except Exception as e:
             logging.error(f"Error during important words extraction for URL={url}: {e}")
 
+        return words_that_matter
+
     @staticmethod
-    def extract_conflict_awards(soup, url: str, conflict_awards: List[dict], top_n: int) -> None:
+    def extract_data_awards(type_check, negaranks_dict, url, title, top_n):
         """
-        Extracts the conflict awards from the 'infobox' div and appends them to the conflict_awards list.
+        Extracts awards from the NEGARANKS data for the specified type (conflict or polemic).
+
+        Args:
+            type_check (str): The type of data to extract awards for ('conflict' or 'polemic').
+            negaranks_dict (list): The list of NEGARANKS data entries.
+            url (str): The URL of the page.
+            title (str): The title of the topic being analyzed.
+            top_n (int): The maximum number of awards to return per category.
+
+        Returns:
+            dict: A dictionary where the keys are categories and the values are lists of awards.
         """
-        try:
-            # Locate the div containing the conflict awards data
-            infobox_div = soup.find('div', class_='infobox', attrs={'data-type': 'conflict"'})  #{{to_check}} there's this " after conflict in the HTML, might be an error
-            if infobox_div:
-                # Find the div with the "GLOBAL" awards section
-                global_awards_div = infobox_div.find('div', class_='box-awards')
-                if global_awards_div:
-                    # Extract awards under "GLOBAL (IN ALL WIKIPEDIA)"
-                    award_headers = global_awards_div.find_all('strong')
+        # Initialize awards as an empty dictionary
+        awards = {}
 
-                    if award_headers:
-                        awards = []
+        # Extract unique categories from the negaranks_dict
+        categories = list({entry['category'] for entry in negaranks_dict})
 
-                        # Extract the text from each award header element
-                        for header in award_headers:
-                            award_title = header.get_text(strip=True)
-                            # Find all subsequent <img> elements and extract their 'title' attributes
-                            year_parts = []
-                            for sibling in header.find_next_siblings():
-                                if sibling.name == 'img':
-                                    img_title = sibling.get('title')
-                                    if img_title and img_title.isdigit():  # Check if title is a year
-                                        year_parts.append(img_title)
-                                # Stop if a new <strong> or <hr> element is found (new award starts)
-                                elif sibling.name == 'strong' or sibling.name == 'hr':
-                                    break
-                            # Append years to the award title if they exist
-                            if year_parts:
-                                award_title += f" ({', '.join(year_parts)})"
-                            awards.append(award_title)
+        # Initialize an empty list for each category
+        for category in categories:
+            awards[category] = []
 
-                        # Limit the extracted awards to the top N
-                        conflict_awards.extend(awards[:top_n])
+        for category in categories:
+            try:
+                # Filter NEGARANKS data by type and category
+                filtered_data = [entry for entry in negaranks_dict if
+                                 entry['type'] == type_check and entry['category'] == category]
 
-                        logging.info(f"Extracted top {top_n} conflict awards from {url}: {conflict_awards}")
+                # Dictionary to group awards by type
+                grouped_awards = {}
+
+                # Award: Top 1000 of all time
+                if any(entry['period'] == 'all' and entry['ranking'] <= 1000 for entry in filtered_data):
+                    grouped_awards.setdefault("Top 1000 of all time", []).append("all time")
+
+                # Award: Top 100 of all time
+                if any(entry['period'] == 'all' and entry['ranking'] <= 100 for entry in filtered_data):
+                    grouped_awards.setdefault("Top 100 of all time", []).append("all time")
+
+                # Award: Top 1% of all time
+                if any(entry['period'] == 'all' and entry['percentile'] == 100 for entry in filtered_data):
+                    grouped_awards.setdefault("Top 1% of all time", []).append("all time")
+
+                # Award: First place of the year
+                first_place_years = [entry['period'] for entry in filtered_data if
+                                     entry['ranking'] == 1 and entry['period'] != 'all']
+                if first_place_years:
+                    grouped_awards.setdefault("First place of the year", []).extend(first_place_years)
+
+                # Award: Third place of the year
+                third_place_years = [entry['period'] for entry in filtered_data if
+                                     entry['ranking'] == 3 and entry['period'] != 'all']
+                if third_place_years:
+                    grouped_awards.setdefault("Third place of the year", []).extend(third_place_years)
+
+                # Award: Top Ten of the year
+                top_ten_years = [entry['period'] for entry in filtered_data if
+                                 entry['ranking'] <= 10 and entry['period'] != 'all']
+                if top_ten_years:
+                    grouped_awards.setdefault("Top Ten of the year", []).extend(top_ten_years)
+
+                # Award: Top 100 of the year
+                top_hundred_years = [entry['period'] for entry in filtered_data if
+                                     entry['ranking'] <= 100 and entry['period'] != 'all']
+                if top_hundred_years:
+                    grouped_awards.setdefault("Top 100 of the year", []).extend(top_hundred_years)
+
+                # Award: Top 1000 of the year
+                top_thousand_years = [entry['period'] for entry in filtered_data if
+                                      entry['ranking'] <= 1000 and entry['period'] != 'all']
+                if top_thousand_years:
+                    grouped_awards.setdefault("Top 1000 of the year", []).extend(top_thousand_years)
+
+                # Award: Top 1% of the year
+                top_one_percent_years = [entry['period'] for entry in filtered_data if
+                                         entry['percentile'] == 100 and entry['period'] != 'all']
+                if top_one_percent_years:
+                    grouped_awards.setdefault("Top 1% of the year", []).extend(top_one_percent_years)
+
+                # Combine and format the grouped awards
+                for award_type, years in grouped_awards.items():
+                    if "all time" in years:
+                        awards[category].append(award_type)
                     else:
-                        logging.warning(f"No <strong> elements found in 'GLOBAL' awards section for URL={url}")
-                else:
-                    logging.warning(f"No 'GLOBAL' awards section found in 'infobox' for URL={url}")
-            else:
-                logging.warning(f"No 'infobox' div with data-type 'conflict' found for URL={url}")
-        except Exception as e:
-            logging.error(f"Error during conflict awards extraction for URL={url}: {e}")
+                        unique_years = sorted(set(years))
+                        awards[category].append(f"{award_type} ({', '.join(unique_years)})")
+
+                # Limit the awards to the top N per category
+                awards[category] = awards[category][:top_n]
+
+                logging.info(f"Extracted awards for {title} from {url}: {awards}")
+            except Exception as e:
+                logging.error(f"Error during awards extraction for {title} from {url}: {e}")
+
+        return awards
 
     @staticmethod
     def extract_polemic_awards(soup, url: str, polemic_awards: List[dict], top_n: int) -> None:
@@ -560,11 +624,23 @@ class NegapediaModule(BaseModule):
             logging.error(f"Error during polemic awards extraction for URL={url}: {e}")
 
     @staticmethod
-    def extract_social_jumps(soup, url: str, social_jumps: List[dict], top_n: int) -> None:
+    def extract_social_jumps(soup, url: str, title: str, top_n: int) -> List[dict]:
         """
-        Extracts the social jumps from the 'social-jumps' div and appends them to the social_jumps list.
+        Extracts social jumps from the 'social-jumps' div and returns the top N entries.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML content of the page.
+            url (str): The URL of the page.
+            title (str): The title of the topic being analyzed.
+            top_n (int): The maximum number of social jumps to return.
+
+        Returns:
+            List[dict]: A list of dictionaries containing social jump titles and links.
         """
+        social_jumps = []
+
         try:
+            # Load environment data to get the base URL
             env_data = load_from_env()
             base_url = env_data.get('modules').get(f'{NegapediaModule.module}').get('website_base_url')
 
@@ -575,56 +651,70 @@ class NegapediaModule(BaseModule):
             # Locate the div containing the social jumps data
             social_jumps_div = soup.find('div', id='social-jumps')
             if social_jumps_div:
-                # Find all the 'dt' elements which contain the social jump links
-                social_jump_entries = social_jumps_div.find_all('dt')
+                # Find all 'dt' elements (titles) and their corresponding 'dd' elements (descriptions)
+                social_jump_titles = social_jumps_div.find_all('dt')
+                social_jump_descriptions = social_jumps_div.find_all('dd', class_='wikipedia-short')
 
-                if social_jump_entries:
-                    jumps = []
+                # Iterate over each pair of title and description to build the social jump data
+                for title_element, description_element in zip(social_jump_titles, social_jump_descriptions):
+                    # Extract title text from 'dt' element
+                    title_text = title_element.get_text(strip=True)
+                    # Extract the data-name attribute from 'dd' element to construct the link
+                    data_name = description_element.get('data-name')
 
-                    # Extract the title and link from each 'dt' element
-                    for entry in social_jump_entries:
-                        link_element = entry.find('a')
-                        if link_element:
-                            title = link_element.get_text(strip=True)
-                            link = urljoin(base_url, link_element.get('href'))  # Use urljoin to handle URLs correctly
-                            jumps.append({'title': title, 'link': link})
+                    # Construct the full link using the base URL
+                    link = urljoin(base_url, f"articles/{data_name}")
 
-                    # Limit the extracted social jumps to the top N
-                    social_jumps.extend(jumps[:top_n])
+                    # Append the social jump to the list
+                    social_jumps.append({'title': title_text, 'link': link})
 
-                    logging.info(f"Extracted top {top_n} social jumps from {url}: {social_jumps}")
-                else:
-                    logging.warning(f"No social jump entries found in 'social-jumps' section for URL={url}")
+                # Limit the extracted social jumps to the top N
+                social_jumps = social_jumps[:top_n]
+
+                logging.info(f"Extracted top {top_n} social jumps from {url}: {social_jumps}")
             else:
                 logging.warning(f"No 'social-jumps' section found for URL={url}")
         except Exception as e:
             logging.error(f"Error during social jumps extraction for URL={url}: {e}")
 
+        return social_jumps
+
     @staticmethod
     def build_description(
-            recent_conflict_levels: List[dict],
-            recent_polemic_levels: List[dict],
+            title: str,
+            recent_conflict_levels: Optional[str],
+            recent_polemic_levels: Optional[str],
             words_that_matter: List[str],
-            conflict_awards: List[str],
-            polemic_awards: List[str],
+            conflict_awards: dict,
+            polemic_awards: dict,
             social_jumps: List[dict]
     ) -> str:
+        """
+        Builds a textual description based on provided conflict and polemic levels, important words, awards, and social jumps.
+
+        Args:
+            title (str): The title of the topic being analyzed.
+            recent_conflict_levels (Optional[str]): Recent conflict levels.
+            recent_polemic_levels (Optional[str]): Recent polemic levels.
+            words_that_matter (List[str]): List of important words.
+            conflict_awards (dict): Conflict awards categorized.
+            polemic_awards (dict): Polemic awards categorized.
+            social_jumps (List[dict]): List of social jumps.
+
+        Returns:
+            str: A formatted description string.
+        """
         # Initialize description string
         description = ""
 
-        # Add a section for Recent Conflict Levels
-        if recent_conflict_levels:
-            description += "RECENT CONFLICT LEVELS:\n"
-            for item in recent_conflict_levels:
-                description += f" - Conflict Level at {item['url']}: {item['conflict_level']}\n"
-            description += "\n"
+        # Add sections for recent conflict and polemic levels
+        description += "RECENT CONFLICT LEVELS:\n"
+        description += f" - Conflict Level at {title}: {recent_conflict_levels or 'N/A'}\n"
+        description += "\n"
 
-        # Add a section for Recent Polemic Levels
-        if recent_polemic_levels:
-            description += "RECENT POLEMIC LEVELS:\n"
-            for item in recent_polemic_levels:
-                description += f" - Polemic Level at {item['url']}: {item['polemic_level']}\n"
-            description += "\n"
+        description += "RECENT POLEMIC LEVELS:\n"
+        description += f" - Polemic Level at {title}: {recent_polemic_levels or 'N/A'}\n"
+        description += "\n"
 
         # Add a section for Important Words
         if words_that_matter:
@@ -632,18 +722,38 @@ class NegapediaModule(BaseModule):
             description += ", ".join(words_that_matter[:10]) + "...\n"  # Showing only top 10 for brevity
             description += "\n"
 
-        # Add a section for Conflict Awards
+        # Add sections for Conflict Awards
         if conflict_awards:
             description += "CONFLICT AWARDS:\n"
-            for award in conflict_awards:
-                description += f" - {award}\n"
+            # Global awards (all categories)
+            if 'all' in conflict_awards and conflict_awards['all']:
+                description += "GLOBAL (IN ALL WIKIPEDIA):\n"
+                for award in conflict_awards['all']:
+                    description += f" - {award}\n"
+
+            # Category-specific awards
+            for category, awards in conflict_awards.items():
+                if category != 'all' and awards:
+                    description += f"CATEGORY SPECIFIC ({category.upper()}):\n"
+                    for award in awards:
+                        description += f" - {award}\n"
             description += "\n"
 
-        # Add a section for Polemic Awards
+        # Add sections for Polemic Awards
         if polemic_awards:
             description += "POLEMIC AWARDS:\n"
-            for award in polemic_awards:
-                description += f" - {award}\n"
+            # Global awards (all categories)
+            if 'all' in polemic_awards and polemic_awards['all']:
+                description += "GLOBAL (IN ALL WIKIPEDIA):\n"
+                for award in polemic_awards['all']:
+                    description += f" - {award}\n"
+
+            # Category-specific awards
+            for category, awards in polemic_awards.items():
+                if category != 'all' and awards:
+                    description += f"CATEGORY SPECIFIC ({category.upper()}):\n"
+                    for award in awards:
+                        description += f" - {award}\n"
             description += "\n"
 
         # Add a section for Social Jumps
@@ -654,210 +764,3 @@ class NegapediaModule(BaseModule):
             description += "\n"
 
         return description
-
-    @staticmethod
-    def fetch_page_content(url: str) -> Optional[str]:
-        """
-        Uses Selenium to load the page fully, including dynamic content, and returns the page source.
-        """
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        env_data = load_from_env()
-        chromedriver_path = env_data['chromedriver_path']
-        service = ChromeService(executable_path=chromedriver_path)  # Update with the path to your ChromeDriver
-
-        driver = webdriver.Chrome(service=service, options=options)
-
-        try:
-            driver.get(url)
-            # Wait for both 'chart_time_conflict' and 'chart_time_polemic' divs to be present
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "chart_time_conflict")))
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "chart_time_polemic")))
-
-            # Allow an extra time for SVG rendering to be fully completed
-            time.sleep(5)
-
-            page_content = driver.page_source
-            logging.info(f"Successfully fetched content from URL: {url}")
-            return page_content
-
-        except Exception as e:
-            logging.error(f"Failed to fetch content from {url}: {e}")
-            return None
-
-        finally:
-            driver.quit()
-
-    @staticmethod
-    def extract_svg_from_div(soup, url: str, div_name: str) -> Optional[str]:
-        """
-        Extracts an SVG from a specific div and converts it to PNG.
-        """
-        try:
-            container_div = soup.find('div', id=div_name)
-            if container_div:
-                svg_element = container_div.find('svg')
-                if svg_element:
-                    svg_file_path = save_svg(svg_element, div_name)
-                    png_file_path = convert_svg_to_png(svg_file_path)
-                    logging.info(f"SVG extracted and converted to PNG: {png_file_path} from {url}")
-                    return png_file_path
-                else:
-                    logging.warning(f"No SVG found within the div '{div_name}' for URL={url}")
-            else:
-                logging.warning(f"No div with id '{div_name}' found for URL={url}")
-        except Exception as e:
-            logging.error(f"Error during SVG extraction from div '{div_name}' for URL={url}: {e}")
-        return None
-
-    @staticmethod
-    def get_negapedia_data_array(url):
-        # Set up Selenium WebDriver
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        env_data = load_from_env()
-        chromedriver_path = env_data['chromedriver_path']
-        service = ChromeService(executable_path=chromedriver_path)  # Update with the path to your ChromeDriver
-
-        driver = webdriver.Chrome(service=service, options=options)
-
-        try:
-            driver.get(url)
-
-            # Wait for the dynamic content to load
-            time.sleep(5)  # This can be adjusted based on your internet speed and the website's response time
-
-            # Find the script containing NEGARANKS
-            scripts = driver.find_elements(By.TAG_NAME, 'script')
-            negaranks_script = None
-            for script in scripts:
-                if 'NEGARANKS' in script.get_attribute('innerHTML'):
-                    negaranks_script = script.get_attribute('innerHTML')
-                    break
-
-            if not negaranks_script:
-                raise Exception("NEGARANKS variable not found in script.")
-
-            # Parse NEGARANKS value from script
-            negaranks_start = negaranks_script.find('NEGARANKS')
-            if negaranks_start != -1:
-                negaranks_start += len('NEGARANKS')
-                negaranks_end = negaranks_script.find(';', negaranks_start)
-                if negaranks_end != -1:
-                    negaranks_data = negaranks_script[negaranks_start:negaranks_end].strip().lstrip('=').strip()
-                    return negaranks_data
-                else:
-                    raise Exception("Failed to parse NEGARANKS variable.")
-            else:
-                raise Exception("NEGARANKS variable not found in script.")
-
-        except Exception as e:
-            raise Exception(f"Failed to get Negapedia data array: {e}")
-
-        finally:
-            driver.quit()
-
-    @staticmethod
-    def convert_negaranks_to_dicts(negaranks_string):
-        cleaned_negaranks_string = negaranks_string.strip().lstrip('[').rstrip(']').replace('\n', '').replace(' ', '').rstrip(',')
-        negaranks_records = cleaned_negaranks_string.split('],')
-        negaranks_list = []
-        for negaranks_record in negaranks_records:
-            negaranks_record = negaranks_record.lstrip('[')
-            splitted_negaranks_record = negaranks_record.split(',')
-            if splitted_negaranks_record[5] != '"all"':
-                negaranks_dict = {
-                    "rank": int(splitted_negaranks_record[0]),
-                    "perc": int(splitted_negaranks_record[1]),
-                    "dperc": int(splitted_negaranks_record[2]),
-                    "type": str(splitted_negaranks_record[3]).replace("\"", ""),
-                    "topic": str(splitted_negaranks_record[4]).replace("\"", ""),
-                    "period": int(str(splitted_negaranks_record[5]).replace("\"", "")),
-                    "measurement_value": float(str(splitted_negaranks_record[6]).replace("\"", "").replace("]", "").replace("[", ""))
-                }
-                negaranks_list.append(negaranks_dict)
-        return negaranks_list
-
-    @staticmethod
-    def filter_useful_negaranks_data(negapedia_data):
-        current_year = datetime.now().year
-        return [entry for entry in negapedia_data if entry['topic'] == 'all' and entry['period'] != current_year]
-
-    @staticmethod
-    def extract_data(topics_data_array, category):
-        data_to_plot = dict()
-        for topic in topics_data_array:
-            data_to_plot[topic] = dict()
-            data_to_plot[topic]["years"] = [entry["period"] for entry in topics_data_array[topic] if
-                                            entry['type'] == category]
-            data_to_plot[topic]["values"] = [entry["measurement_value"] for entry in topics_data_array[topic] if
-                                             entry['type'] == category]
-        return data_to_plot
-
-    @staticmethod
-    def plot_negaraks_data_copilot(category, pages, topics_data_array, plots_path):
-        # Extract data for plotting
-        data_to_plot = NegapediaModule.extract_data(topics_data_array, category)
-
-        # Define a color map for topics using seaborn color palette
-        colors = sns.color_palette("husl", len(data_to_plot))
-        topic_colors = {topic: colors[i] for i, topic in enumerate(data_to_plot)}
-
-        # Create line plots
-        plt.figure(figsize=(14, 8), dpi=100)
-
-        for topic in data_to_plot:
-            years_to_plot = data_to_plot[topic]["years"]
-            values_to_plot = data_to_plot[topic]["values"]
-            plot_label = topic
-            plot_color = topic_colors[topic]
-            plt.plot(years_to_plot, values_to_plot, label=plot_label, color=plot_color, marker="o", linestyle='-')
-
-        # Add labels and title
-        plt.xlabel("Year", fontsize=14)
-        y_label = category + " level"
-        plt.ylabel(y_label, fontsize=14)
-
-        # Construct the title
-        if len(pages) == 1:
-            topics_str = pages[0]
-        elif len(pages) == 2:
-            topics_str = " and ".join(pages)
-        else:
-            topics_str = ", ".join(pages[:-1]) + ", and " + pages[-1]
-
-        title_plot = "Comparison of " + category + " level between topics "
-        plt.title(title_plot, fontsize=16)
-        plt.legend(fontsize=12)
-
-        # Adjust x-axis and y-axis ticks
-        plt.grid(True, linestyle='--', linewidth=0.5)
-        max_x = max(max(data_to_plot[topic]["years"]) for topic in data_to_plot)
-        min_x = min(min(data_to_plot[topic]["years"]) for topic in data_to_plot)
-        max_y = max(max(data_to_plot[topic]["values"]) for topic in data_to_plot)
-        min_y = min(min(data_to_plot[topic]["values"]) for topic in data_to_plot)
-
-        x_tick_step = 1
-        y_tick_step = round(max_y / 10)
-
-        plt.xticks(range(min_x - 1, max_x + 1, x_tick_step), fontsize=12)
-        plt.yticks(range(0, int(max_y) + 1, y_tick_step), fontsize=12)
-
-        # Save the plot as a PNG file
-        timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
-        output_filename = title_plot.replace(" ", "_").replace(",", "") + "_" + timestamp + ".png"
-        output_path = os.path.join('images_to_post', output_filename)
-        plt.tight_layout()
-        plt.savefig(output_path)
-
-        plots_path.append("images_to_post/" + output_filename)
-
-        # Show the plot
-        # plt.show()
-        return None

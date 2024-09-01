@@ -11,6 +11,6 @@ class NegapediaPageInfo(TypedDict):
     recent_conflict_levels: List[Dict[str, str]]  # List of dictionaries containing recent conflict levels
     recent_polemic_levels: List[Dict[str, str]]  # List of dictionaries containing recent polemic levels
     words_that_matter: List[str]  # List of important words extracted
-    conflict_awards: List[str]  # List of awards related to conflict
-    polemic_awards: List[str]  # List of awards related to polemic
+    conflict_awards: Dict[str, List[str]]  # Dictionary with categories as keys and lists of awards as values
+    polemic_awards: Dict[str, List[str]]  # Dictionary with categories as keys and lists of awards as values
     social_jumps: List[Dict[str, str]]  # List of social jumps with titles and links

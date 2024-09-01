@@ -1,6 +1,6 @@
 <!-- web_post_comparison_template.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,74 +69,80 @@
     </style>
 </head>
 <body>
-    <h1>Title of the post: <i>{{title}}</i></h1>
+    <h1>Titolo del post: <i>{{title}}</i></h1>
 
     <!-- Comparison Container -->
     <div class="comparison-container">
         <!-- Column for the first URL -->
         <div class="comparison-column">
-            <h2>First Topic: {{topic1_title}}</h2>
+            <h2>Primo topic: {{topic1_title}}</h2>
 
             <!-- Conflict Levels -->
-            <div class="section-title">Conflict Levels</div>
+            <div class="section-title">Livello di Conflitto Recente</div>
             <p>{{conflict_levels_1}}</p>
 
             <!-- Polemic Levels -->
-            <div class="section-title">Polemic Levels</div>
+            <div class="section-title">Livello di Polemica Recente</div>
             <p>{{polemic_levels_1}}</p>
 
+            <!-- Title Before Images -->
+            <div class="section-title">Livelli Storici di Conflitto e Polemica</div>
+            <!-- Images for Topic 1 -->
+            <div class="image-container">
+                {{images_1}}
+            </div>
+
             <!-- Important Words -->
-            <div class="section-title">Important Words</div>
+            <div class="section-title">Parole Importanti</div>
             <p>{{important_words_1}}</p>
 
             <!-- Awards -->
-            <div class="section-title">Conflict Awards</div>
+            <div class="section-title">Awards di Conflitto</div>
             <p>{{conflict_awards_1}}</p>
 
-            <div class="section-title">Polemic Awards</div>
+            <div class="section-title">Awards di Polemica</div>
             <p>{{polemic_awards_1}}</p>
 
             <!-- Social Jumps -->
             <div class="section-title">Social Jumps</div>
             <p>{{social_jumps_1}}</p>
 
-            <!-- Images for Topic 1 -->
-            <div class="image-container">
-                {{images_1}}
-            </div>
         </div>
 
         <!-- Column for the second URL -->
         <div class="comparison-column">
-            <h2>Second Topic: {{topic2_title}}</h2>
+            <h2>Secondo Topic: {{topic2_title}}</h2>
 
             <!-- Conflict Levels -->
-            <div class="section-title">Conflict Levels</div>
+            <div class="section-title">Livello di Conflitto</div>
             <p>{{conflict_levels_2}}</p>
 
             <!-- Polemic Levels -->
-            <div class="section-title">Polemic Levels</div>
+            <div class="section-title">Livello di Polemica</div>
             <p>{{polemic_levels_2}}</p>
 
+            <!-- Title Before Images -->
+            <div class="section-title">Livelli Storici di Conflitto e Polemica</div>
+            <!-- Images for Topic 2 -->
+            <div class="image-container">
+                {{images_2}}
+            </div>
+
             <!-- Important Words -->
-            <div class="section-title">Important Words</div>
+            <div class="section-title">Parole Importanti</div>
             <p>{{important_words_2}}</p>
 
             <!-- Awards -->
-            <div class="section-title">Conflict Awards</div>
+            <div class="section-title">Awards di Conflitto</div>
             <p>{{conflict_awards_2}}</p>
 
-            <div class="section-title">Polemic Awards</div>
+            <div class="section-title">Awards di Polemica</div>
             <p>{{polemic_awards_2}}</p>
 
             <!-- Social Jumps -->
             <div class="section-title">Social Jumps</div>
             <p>{{social_jumps_2}}</p>
 
-            <!-- Images for Topic 2 -->
-            <div class="image-container">
-                {{images_2}}
-            </div>
         </div>
     </div>
 
