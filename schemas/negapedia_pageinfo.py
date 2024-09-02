@@ -8,6 +8,8 @@ class NegapediaPageInfo(TypedDict):
     message: Optional[str]
     historical_conflict: List[ImageInfo]  # Images representing historical conflict
     historical_polemic: List[ImageInfo]  # Images representing historical polemic
+    historical_conflict_comparison: Optional[List[ImageInfo]]  # Images representing historical conflict levels comparison
+    historical_polemic_comparison: Optional[List[ImageInfo]]  # Images representing historical polemic levels comparison
     recent_conflict_levels: List[Dict[str, str]]  # List of dictionaries containing recent conflict levels
     recent_polemic_levels: List[Dict[str, str]]  # List of dictionaries containing recent polemic levels
     words_that_matter: List[str]  # List of important words extracted

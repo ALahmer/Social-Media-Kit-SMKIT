@@ -31,12 +31,16 @@
             gap: 20px;
             margin-top: 20px;
         }
-        .comparison-column {
-            width: 45%;
+        .comparison-column, .full-width-container {
             background-color: #fff;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .full-width-container {
+            width: calc(100% - 40px);
+            margin: 20px 0;
         }
         .section-title {
             font-size: 20px;
@@ -156,6 +160,14 @@
             <div class="section-title">Social Jumps</div>
             <p>{{social_jumps_2}}</p>
 
+        </div>
+    </div>
+
+    <!-- Full-width Container for Comparison Images -->
+    <div class="full-width-container">
+        <div class="section-title">Comparison of Historical Conflict and Polemic Levels</div>
+        <div class="image-container">
+            {{comparison_images}}
         </div>
     </div>
 

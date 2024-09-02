@@ -56,7 +56,7 @@ def convert_negapediapageinfo_to_filled_content(post_info, filled_content, templ
         [f"<a href='{jump['link']}'>{jump['title']}</a>" for jump in topic1.get('social_jumps', [])])
 
     images_html_1 = ''
-    for image_info in topic1.get('historical_conflict', []) + topic1.get('historical_polemic', []):
+    for image_info in (topic1.get('historical_conflict', []) or []) + (topic1.get('historical_polemic', []) or []):
         src = image_info.get('image')
         width = image_info.get('image_width')
         height = image_info.get('image_height')
@@ -70,6 +70,21 @@ def convert_negapediapageinfo_to_filled_content(post_info, filled_content, templ
 
         images_html_1 += image_tag
 
+    comparison_images_html = ''
+    for image_info in (topic1.get('historical_conflict_comparison', []) or []) + (topic1.get('historical_polemic_comparison', []) or []):
+        src = image_info.get('image')
+        width = image_info.get('image_width')
+        height = image_info.get('image_height')
+        alt = image_info.get('image_alt') or "Image"
+        location = image_info.get('location')
+
+        if width and height:
+            image_tag = f'<img src="{src}" alt="{alt}" width="{width}" height="{height}">'
+        else:
+            image_tag = f'<img src="{src}" alt="{alt}">'
+
+        comparison_images_html += image_tag
+
     # Replace placeholders for the first topic
     filled_content = filled_content.replace('{{topic1_title}}', str(topic1_title))
     filled_content = filled_content.replace('{{conflict_levels_1}}', str(conflict_levels_1))
@@ -79,6 +94,7 @@ def convert_negapediapageinfo_to_filled_content(post_info, filled_content, templ
     filled_content = filled_content.replace('{{polemic_awards_1}}', str(polemic_awards_1))
     filled_content = filled_content.replace('{{social_jumps_1}}', str(social_jumps_1))
     filled_content = filled_content.replace('{{images_1}}', str(images_html_1))
+    filled_content = filled_content.replace('{{comparison_images}}', str(comparison_images_html))
 
     # Process second topic if it exists
     if topic2:
@@ -92,7 +108,7 @@ def convert_negapediapageinfo_to_filled_content(post_info, filled_content, templ
             [f"<a href='{jump['link']}'>{jump['title']}</a>" for jump in topic2.get('social_jumps', [])])
 
         images_html_2 = ''
-        for image_info in topic2.get('historical_conflict', []) + topic2.get('historical_polemic', []):
+        for image_info in (topic2.get('historical_conflict', []) or []) + (topic2.get('historical_polemic', []) or []):
             src = image_info.get('image')
             width = image_info.get('image_width')
             height = image_info.get('image_height')
@@ -145,7 +161,7 @@ def convert_pageinfo_to_filled_content(post_info, filled_content, template):
     description = post_info.get('message') or post_info.get('description') or ""
 
     images_html = ''
-    for image_info in post_info.get('images', []):
+    for image_info in (post_info.get('images', []) or []):
         src = image_info.get('image')
         width = image_info.get('image_width')
         height = image_info.get('image_height')

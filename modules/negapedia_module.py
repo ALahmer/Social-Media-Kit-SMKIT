@@ -140,6 +140,8 @@ class NegapediaModule(BaseModule):
             'message': None,
             'historical_conflict': [],
             'historical_polemic': [],
+            'historical_conflict_comparison': [],
+            'historical_polemic_comparison': [],
             'recent_conflict_levels': [],
             'recent_polemic_levels': [],
             'words_that_matter': [],
@@ -177,6 +179,8 @@ class NegapediaModule(BaseModule):
                 'message': message,
                 'historical_conflict': historical_conflict_levels,
                 'historical_polemic': historical_polemic_levels,
+                'historical_conflict_comparison': [],
+                'historical_polemic_comparison': [],
                 'recent_conflict_levels': recent_conflict_levels,
                 'recent_polemic_levels': recent_polemic_levels,
                 'words_that_matter': words_that_matter,
@@ -213,6 +217,11 @@ class NegapediaModule(BaseModule):
         description_parts = []  # List to accumulate descriptions
         negapedia_pages_info = []
 
+        # Initialize arrays to hold data for comparison plotting
+        negaranks_for_comparison = []
+        urls_for_comparison = []
+        titles_for_comparison = []
+
         for url in urls:
             try:
                 page_content = self.fetch_page_content(url)
@@ -245,6 +254,8 @@ class NegapediaModule(BaseModule):
                     'message': message,
                     'historical_conflict': historical_conflict_levels,
                     'historical_polemic': historical_polemic_levels,
+                    'historical_conflict_comparison': [],
+                    'historical_polemic_comparison': [],
                     'recent_conflict_levels': recent_conflict_levels,
                     'recent_polemic_levels': recent_polemic_levels,
                     'words_that_matter': words_that_matter,
@@ -254,9 +265,17 @@ class NegapediaModule(BaseModule):
                 }
                 negapedia_pages_info.append(negapedia_page_info)
 
+                # Append data to arrays for comparison
+                negaranks_for_comparison.append(negaranks_dict)
+                urls_for_comparison.append(url)
+                titles_for_comparison.append(title)
+
             except Exception as e:
                 logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
                 continue
+
+        historical_conflict_comparison = self.extract_comparison_of_historical_plotted_data('conflict', negaranks_for_comparison, urls_for_comparison, titles_for_comparison)
+        historical_polemic_comparison = self.extract_comparison_of_historical_plotted_data('polemic', negaranks_for_comparison, urls_for_comparison, titles_for_comparison)
 
         # Combine all parts into a single description
         if description_parts:
@@ -264,6 +283,10 @@ class NegapediaModule(BaseModule):
 
         for negapedia_page_info in negapedia_pages_info:
             negapedia_page_info['description'] = description
+        for negapedia_page_info in negapedia_pages_info:
+            negapedia_page_info['historical_conflict_comparison'] = historical_conflict_comparison
+        for negapedia_page_info in negapedia_pages_info:
+            negapedia_page_info['historical_polemic_comparison'] = historical_polemic_comparison
 
         return negapedia_pages_info
 
@@ -392,13 +415,17 @@ class NegapediaModule(BaseModule):
         env_data = load_from_env()
         posts_images_absolute_destination_path = env_data.get('posts_images_absolute_destination_path')
 
+        # Define helper function to filter the NEGARANKS data
+        def filter_data(negaranks_dict):
+            return [entry for entry in negaranks_dict
+                    if entry['type'] == type_check and
+                    entry['category'] == 'all' and
+                    entry['period'] != 'all' and
+                    entry['period'] != str(datetime.now().year)]
+
         historical_data_levels = []
         # Filter the NEGARANKS data
-        filtered_data = [entry for entry in negaranks_dict
-                         if entry['type'] == type_check and
-                         entry['category'] == 'all' and
-                         entry['period'] != 'all' and
-                         entry['period'] != str(datetime.now().year)]
+        filtered_data = filter_data(negaranks_dict)
 
         years = [int(entry['period']) for entry in filtered_data]
         values = [entry['absolute_value'] for entry in filtered_data]
@@ -697,6 +724,82 @@ class NegapediaModule(BaseModule):
             logging.error(f"Error during social jumps extraction for URL={url}: {e}")
 
         return social_jumps
+
+    @staticmethod
+    def extract_comparison_of_historical_plotted_data(type_check: str, negaranks_dicts: List[List[Dict[str, Union[int, str, float]]]], urls: List[str], titles: List[str]) -> List[dict]:
+        """
+        Extracts and plots comparative historical data for multiple NEGARANKS dictionaries.
+
+        Args:
+            type_check (str): The type of data to extract ('conflict' or 'polemic').
+            negaranks_dicts (List[List[Dict[str, Union[int, str, float]]]]): A list of NEGARANKS data entries for each topic.
+            urls (List[str]): A list of URLs for each page.
+            titles (List[str]): A list of titles for each topic being analyzed.
+
+        Returns:
+            List[dict]: A list containing information about the generated plot image.
+        """
+        env_data = load_from_env()
+        posts_images_absolute_destination_path = env_data.get('posts_images_absolute_destination_path')
+
+        comparison_data_levels = []
+
+        plt.figure(figsize=(14, 8), dpi=100)
+
+        # Define helper function to filter the NEGARANKS data
+        def filter_data(negaranks_dict):
+            return [entry for entry in negaranks_dict
+                    if entry['type'] == type_check and
+                    entry['category'] == 'all' and
+                    entry['period'] != 'all' and
+                    entry['period'] != str(datetime.now().year)]
+
+        # Loop through each set of NEGARANKS data to plot
+        for i, negaranks_dict in enumerate(negaranks_dicts):
+            filtered_data = filter_data(negaranks_dict)
+            years = [int(entry['period']) for entry in filtered_data]
+            values = [entry['absolute_value'] for entry in filtered_data]
+
+            # Plot data for each topic
+            plot_label = f"Historical {type_check.capitalize()} Levels for {titles[i]}"
+            plot_color = random.choice(sns.color_palette("husl", 100))
+            plt.plot(years, values, label=plot_label, color=plot_color, marker="o", linestyle='-')
+
+        # Add labels, title, and legend
+        plt.xlabel("Year", fontsize=14)
+        plt.ylabel(f"{type_check.capitalize()} level", fontsize=14)
+        plt.title(f"Comparison of Historical {type_check.capitalize()} Levels", fontsize=16)
+        plt.legend(fontsize=12)
+
+        # Adjust x-axis and y-axis ticks
+        plt.grid(True, linestyle='--', linewidth=0.5)
+        min_year = min([int(entry['period']) for d in negaranks_dicts for entry in filter_data(d)])
+        max_year = max([int(entry['period']) for d in negaranks_dicts for entry in filter_data(d)])
+        max_value = max([entry['absolute_value'] for d in negaranks_dicts for entry in filter_data(d)])
+
+        x_tick_step = 1
+        y_tick_step = max(1, round(max_value / 10))
+
+        plt.xticks(range(min_year - 1, max_year + 1, x_tick_step), fontsize=12)
+        plt.yticks(range(0, int(max_value) + 1, y_tick_step), fontsize=12)
+
+        # Save the plot as a PNG file
+        timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
+        output_filename = f"Comparison_Historical_{type_check.capitalize()}_Levels_{timestamp}.png"
+        output_path = os.path.join(posts_images_absolute_destination_path, output_filename)
+        plt.tight_layout()
+        plt.savefig(output_path)
+
+        comparison_data_levels.append({
+            "image": output_path,
+            'image_width': None,
+            'image_height': None,
+            'image_alt': f"Comparison of Historical {type_check.capitalize()} Levels for Multiple Topics",
+            'location': "local",
+        })
+
+        print(f"Comparison plot for {', '.join(urls)} saved at: {output_path}")
+        return comparison_data_levels
 
     @staticmethod
     def build_description(
