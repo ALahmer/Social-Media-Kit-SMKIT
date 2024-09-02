@@ -63,12 +63,10 @@ def convert_negapediapageinfo_to_filled_content(post_info, filled_content, templ
         alt = image_info.get('image_alt') or "Image"
         location = image_info.get('location')
 
-        src_prefix = "" if location == "web" else "../"
-
         if width and height:
-            image_tag = f'<img src="{src_prefix}{src}" alt="{alt}" width="{width}" height="{height}">'
+            image_tag = f'<img src="{src}" alt="{alt}" width="{width}" height="{height}">'
         else:
-            image_tag = f'<img src="{src_prefix}{src}" alt="{alt}">'
+            image_tag = f'<img src="{src}" alt="{alt}">'
 
         images_html_1 += image_tag
 
@@ -101,12 +99,10 @@ def convert_negapediapageinfo_to_filled_content(post_info, filled_content, templ
             alt = image_info.get('image_alt') or "Image"
             location = image_info.get('location')
 
-            src_prefix = "" if location == "web" else "../"
-
             if width and height:
-                image_tag = f'<img src="{src_prefix}{src}" alt="{alt}" width="{width}" height="{height}">'
+                image_tag = f'<img src="{src}" alt="{alt}" width="{width}" height="{height}">'
             else:
-                image_tag = f'<img src="{src_prefix}{src}" alt="{alt}">'
+                image_tag = f'<img src="{src}" alt="{alt}">'
 
             images_html_2 += image_tag
 
