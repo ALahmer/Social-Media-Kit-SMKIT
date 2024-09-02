@@ -15,7 +15,6 @@ import random
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import os
-import seaborn as sns
 
 
 class NegapediaModule(BaseModule):
@@ -163,8 +162,9 @@ class NegapediaModule(BaseModule):
             negaranks_dict = self.convert_negaranks_to_dict(negaranks_list)
 
             title = self.extract_page_title(soup, url)
-            historical_conflict_levels = self.extract_historical_plotted_data('conflict', negaranks_dict, url, title)
-            historical_polemic_levels = self.extract_historical_plotted_data('polemic', negaranks_dict, url, title)
+            plot_color = self.color_manager.get_color_for_topic(title)
+            historical_conflict_levels = self.extract_historical_plotted_data('conflict', negaranks_dict, plot_color, url, title)
+            historical_polemic_levels = self.extract_historical_plotted_data('polemic', negaranks_dict, plot_color, url, title)
             recent_conflict_levels = self.extract_recent_data('conflict', negaranks_dict, url, title)
             recent_polemic_levels = self.extract_recent_data('polemic', negaranks_dict, url, title)
             words_that_matter = self.extract_words_that_matter(soup, url, title, number_of_words_that_matter_to_extract)
@@ -221,6 +221,7 @@ class NegapediaModule(BaseModule):
         negaranks_for_comparison = []
         urls_for_comparison = []
         titles_for_comparison = []
+        plot_colors_for_comparison = []
 
         for url in urls:
             try:
@@ -236,8 +237,9 @@ class NegapediaModule(BaseModule):
                 negaranks_dict = self.convert_negaranks_to_dict(negaranks_list)
 
                 title = self.extract_page_title(soup, url)
-                historical_conflict_levels = self.extract_historical_plotted_data('conflict', negaranks_dict, url, title)
-                historical_polemic_levels = self.extract_historical_plotted_data('polemic', negaranks_dict, url, title)
+                plot_color = self.color_manager.get_color_for_topic(title)
+                historical_conflict_levels = self.extract_historical_plotted_data('conflict', negaranks_dict, plot_color, url, title)
+                historical_polemic_levels = self.extract_historical_plotted_data('polemic', negaranks_dict, plot_color, url, title)
                 recent_conflict_levels = self.extract_recent_data('conflict', negaranks_dict, url, title)
                 recent_polemic_levels = self.extract_recent_data('polemic', negaranks_dict, url, title)
                 words_that_matter = self.extract_words_that_matter(soup, url, title, number_of_words_that_matter_to_extract)
@@ -269,13 +271,14 @@ class NegapediaModule(BaseModule):
                 negaranks_for_comparison.append(negaranks_dict)
                 urls_for_comparison.append(url)
                 titles_for_comparison.append(title)
+                plot_colors_for_comparison.append(plot_color)
 
             except Exception as e:
                 logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
                 continue
 
-        historical_conflict_comparison = self.extract_comparison_of_historical_plotted_data('conflict', negaranks_for_comparison, urls_for_comparison, titles_for_comparison)
-        historical_polemic_comparison = self.extract_comparison_of_historical_plotted_data('polemic', negaranks_for_comparison, urls_for_comparison, titles_for_comparison)
+        historical_conflict_comparison = self.extract_comparison_of_historical_plotted_data('conflict', negaranks_for_comparison, plot_colors_for_comparison, urls_for_comparison, titles_for_comparison)
+        historical_polemic_comparison = self.extract_comparison_of_historical_plotted_data('polemic', negaranks_for_comparison, plot_colors_for_comparison, urls_for_comparison, titles_for_comparison)
 
         # Combine all parts into a single description
         if description_parts:
@@ -399,13 +402,14 @@ class NegapediaModule(BaseModule):
         return url
 
     @staticmethod
-    def extract_historical_plotted_data(type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], url: str, title: str) -> List[dict]:
+    def extract_historical_plotted_data(type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], plot_color: str, url: str, title: str) -> List[dict]:
         """
         Extracts and plots historical conflict data from the NEGARANKS dictionary.
 
         Args:
             type_check (str): The type of data to extract ('conflict' or 'polemic').
             negaranks_dict (list): The list of NEGARANKS data entries.
+            plot_color (str): The color assigned for plotting topic data.
             url (str): The URL of the page.
             title (str): The title of the topic being analyzed.
 
@@ -437,7 +441,6 @@ class NegapediaModule(BaseModule):
         values_to_plot = values
         plot_label = f"Historical {type_check.capitalize()} Levels for {title}"
         # Select a random color from the color palette
-        plot_color = random.choice(sns.color_palette("husl", 100))
         plt.plot(years_to_plot, values_to_plot, label=plot_label, color=plot_color, marker="o", linestyle='-')
 
         # Add labels and title
@@ -726,13 +729,14 @@ class NegapediaModule(BaseModule):
         return social_jumps
 
     @staticmethod
-    def extract_comparison_of_historical_plotted_data(type_check: str, negaranks_dicts: List[List[Dict[str, Union[int, str, float]]]], urls: List[str], titles: List[str]) -> List[dict]:
+    def extract_comparison_of_historical_plotted_data(type_check: str, negaranks_dicts: List[List[Dict[str, Union[int, str, float]]]], plot_colors: List[str], urls: List[str], titles: List[str]) -> List[dict]:
         """
         Extracts and plots comparative historical data for multiple NEGARANKS dictionaries.
 
         Args:
             type_check (str): The type of data to extract ('conflict' or 'polemic').
             negaranks_dicts (List[List[Dict[str, Union[int, str, float]]]]): A list of NEGARANKS data entries for each topic.
+            plot_colors (List[str]): A list of color assigned for plotting topics data.
             urls (List[str]): A list of URLs for each page.
             titles (List[str]): A list of titles for each topic being analyzed.
 
@@ -762,7 +766,7 @@ class NegapediaModule(BaseModule):
 
             # Plot data for each topic
             plot_label = f"Historical {type_check.capitalize()} Levels for {titles[i]}"
-            plot_color = random.choice(sns.color_palette("husl", 100))
+            plot_color = plot_colors[i]
             plt.plot(years, values, label=plot_label, color=plot_color, marker="o", linestyle='-')
 
         # Add labels, title, and legend

@@ -5,11 +5,15 @@ from schemas.negapedia_pageinfo import NegapediaPageInfo
 from connectors.facebook_connector import post_on_facebook
 from connectors.twitter_connector import post_on_twitter
 from connectors.web_connector import post_on_web
+from utils.plot_colors_management import PlotColorManager
 import requests
 
 
 class BaseModule(ABC):
     module = None
+
+    # Initialize a shared color manager for all modules
+    color_manager = PlotColorManager()
 
     @abstractmethod
     def handle_module(self, args: Any) -> None:
