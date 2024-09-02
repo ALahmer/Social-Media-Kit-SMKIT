@@ -1,9 +1,14 @@
 from typing import Dict
+import random
+import seaborn as sns
 
 
 class PlotColorManager:
 
+    # colors available which will be taken one by one in the order they are listed
     COLORS = [
+        "#9A8B4F",  # Olive
+        "#0B5369",  # Deep Teal
         "#FF6F61",  # Coral Red
         "#6B5B95",  # Royal Purple
         "#88B04B",  # Lime Green
@@ -43,9 +48,7 @@ class PlotColorManager:
         "#9B1B30",  # Claret
         "#55B4B0",  # Aqua Blue
         "#B55A30",  # Chestnut
-        "#9A8B4F",  # Olive
         "#E08119",  # Pumpkin
-        "#0B5369",  # Deep Teal
         "#BCB4A4",  # Taupe
         "#D69C2F",  # Mustard
         "#4A772F",  # Forest Green
@@ -127,10 +130,16 @@ class PlotColorManager:
         if topic in cls.topic_color_map:
             return cls.topic_color_map[topic]
 
-        # Otherwise, assign the next available color
+        # If all predefined colors are assigned, use a fallback random color
+        if cls._next_color_index >= len(cls.COLORS):
+            fallback_color = random.choice(sns.color_palette("husl", 100))
+            cls.topic_color_map[topic] = fallback_color
+            return fallback_color
+
+        # Assign the next available color from the predefined list
         color = cls.COLORS[cls._next_color_index]
         cls.topic_color_map[topic] = color
 
-        # Increment and loop the color index if we exceed the color list length
-        cls._next_color_index = (cls._next_color_index + 1) % len(cls.COLORS)
+        # Increment the color index
+        cls._next_color_index += 1
         return color
