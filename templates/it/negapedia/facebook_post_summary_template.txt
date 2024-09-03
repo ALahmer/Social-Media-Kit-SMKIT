@@ -1,0 +1,15 @@
+Titolo del post: {{title}}
+
+{{description}}
+
+Livello di Conflitto Recente: {{recent_conflict_levels}}
+Livello di Polemica Recente: {{recent_polemic_levels}}
+
+Parole Importanti: {{important_words}}
+
+Awards di Conflitto: {{conflict_awards}}
+Awards di Polemica: {{polemic_awards}}
+
+Social Jumps: {{social_jumps}}
+
+Testo alternativo immagini: {{images_alt}}

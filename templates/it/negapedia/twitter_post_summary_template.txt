@@ -1,0 +1,10 @@
+Titolo del post: {{title}}
+
+{{description}}
+
+Livello di Conflitto Recente: {{recent_conflict_levels}}
+Livello di Polemica Recente: {{recent_polemic_levels}}
+
+Parole Importanti: {{important_words}}
+
+Testo alternativo immagini: {{images_alt}}

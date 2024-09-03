@@ -11,8 +11,8 @@ class NegapediaPageInfo(TypedDict):
     historical_polemic: List[ImageInfo]  # Images representing historical polemic
     historical_conflict_comparison: Optional[List[ImageInfo]]  # Images representing historical conflict levels comparison
     historical_polemic_comparison: Optional[List[ImageInfo]]  # Images representing historical polemic levels comparison
-    recent_conflict_levels: List[Dict[str, str]]  # List of dictionaries containing recent conflict levels
-    recent_polemic_levels: List[Dict[str, str]]  # List of dictionaries containing recent polemic levels
+    recent_conflict_levels: Optional[str]  # String containing recent conflict levels
+    recent_polemic_levels: Optional[str]  # String containing recent polemic levels
     words_that_matter: List[str]  # List of important words extracted
     conflict_awards: Dict[str, List[str]]  # Dictionary with categories as keys and lists of awards as values
     polemic_awards: Dict[str, List[str]]  # Dictionary with categories as keys and lists of awards as values
