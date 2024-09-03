@@ -1,0 +1,13 @@
+Title of the post: {{title}}
+
+{{description}}
+
+Media's Alt: {{images_alt}}
+
+Tags: {{article_tag}}
+Keywords: {{keywords}}
+Updated Time: {{updated_time}}
+Article Published Time: {{article_published_time}}
+Article Modified Time: {{article_modified_time}}
+
+URL: {{urls}}

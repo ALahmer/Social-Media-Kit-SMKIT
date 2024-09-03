@@ -1,0 +1,13 @@
+Titolo del post: {{title}}
+
+{{description}}
+
+Testo alternativo immagini: {{images_alt}}
+
+Etichette: {{article_tag}}
+Parole chiave: {{keywords}}
+Orario di aggiornamento: {{updated_time}}
+Orario di pubblicazione: {{article_published_time}}
+Orario di modifica: {{article_modified_time}}
+
+URL: {{urls}}

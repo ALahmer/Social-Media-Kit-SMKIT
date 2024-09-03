@@ -40,7 +40,7 @@ class NegapediaModule(BaseModule):
         # Check if the mode is 'comparison' and validate the number of pages
         elif args.mode == 'comparison':
             if len(args.pages) != 2:
-                raise ValueError("The 'comparison' mode requires exactly two URLs in the '--pages' argument.")
+                raise ValueError("The 'comparison' mode requires exactly two URLs in the '--pages' argument.")  # {{to_fix}} just print the error and return otherwise it will print the track trace on console
 
         logging.info(f"Handling negapedia module for Pages {args.pages}")
         self.process_pages(

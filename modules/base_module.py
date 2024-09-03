@@ -105,7 +105,7 @@ class BaseModule(ABC):
                 # if not check_access_token():  # {{to_check}} if needed or not, it was only on negapedia module
                 #     start_flask_app()
                 #     input("Press Enter after completing authentication in the browser...")
-                post_on_facebook(post_info, language)
+                post_on_facebook(post_info, mode, language, self.module)
             elif channel == 'twitter':
                 post_on_twitter(post_info, language)
             elif channel == 'web':
