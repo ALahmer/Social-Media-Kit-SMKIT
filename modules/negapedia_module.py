@@ -137,6 +137,7 @@ class NegapediaModule(BaseModule):
             'title': None,
             'description': None,
             'message': None,
+            'compact_message': None,
             'historical_conflict': [],
             'historical_polemic': [],
             'historical_conflict_comparison': [],
@@ -172,11 +173,13 @@ class NegapediaModule(BaseModule):
             polemic_awards = self.extract_data_awards('polemic', negaranks_dict, url, title, number_of_polemic_awards_to_extract)
             social_jumps = self.extract_social_jumps(soup, url, title, number_of_social_jumps_to_extract)
 
-            description = self.build_description(title, recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
+            compact_message = self.build_compact_message(title, recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
+
             negapedia_page_info = {
                 'title': title,
-                'description': description,
+                'description': None,
                 'message': message,
+                'compact_message': compact_message,
                 'historical_conflict': historical_conflict_levels,
                 'historical_polemic': historical_polemic_levels,
                 'historical_conflict_comparison': [],
@@ -213,8 +216,8 @@ class NegapediaModule(BaseModule):
         number_of_social_jumps_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_social_jumps_to_extract')
 
         # Initialize variables
-        description = None
-        description_parts = []  # List to accumulate descriptions
+        compact_message = None
+        compact_messages = []  # List to accumulate compact messages
         negapedia_pages_info = []
 
         # Initialize arrays to hold data for comparison plotting
@@ -247,13 +250,11 @@ class NegapediaModule(BaseModule):
                 polemic_awards = self.extract_data_awards('polemic', negaranks_dict, url, title, number_of_polemic_awards_to_extract)
                 social_jumps = self.extract_social_jumps(soup, url, title, number_of_social_jumps_to_extract)
 
-                # Build description for the current URL and add it to description_parts
-                url_description = self.build_description(title, recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
-                description_parts.append(url_description)
                 negapedia_page_info = {
                     'title': title,
                     'description': None,
                     'message': message,
+                    'compact_message': None,
                     'historical_conflict': historical_conflict_levels,
                     'historical_polemic': historical_polemic_levels,
                     'historical_conflict_comparison': [],
@@ -266,6 +267,10 @@ class NegapediaModule(BaseModule):
                     'social_jumps': social_jumps
                 }
                 negapedia_pages_info.append(negapedia_page_info)
+
+                # Build compact message for the current topic and add it to compact_messages
+                topic_compact_message = self.build_compact_message(title, recent_conflict_levels, recent_polemic_levels, words_that_matter, conflict_awards, polemic_awards, social_jumps)
+                compact_messages.append(topic_compact_message)
 
                 # Append data to arrays for comparison
                 negaranks_for_comparison.append(negaranks_dict)
@@ -280,12 +285,12 @@ class NegapediaModule(BaseModule):
         historical_conflict_comparison = self.extract_comparison_of_historical_plotted_data('conflict', negaranks_for_comparison, plot_colors_for_comparison, urls_for_comparison, titles_for_comparison)
         historical_polemic_comparison = self.extract_comparison_of_historical_plotted_data('polemic', negaranks_for_comparison, plot_colors_for_comparison, urls_for_comparison, titles_for_comparison)
 
-        # Combine all parts into a single description
-        if description_parts:
-            description = "\n\n".join(description_parts)
+        # Combine all parts into a single compact_message
+        if compact_messages:
+            compact_message = "\n\n".join(compact_messages)
 
         for negapedia_page_info in negapedia_pages_info:
-            negapedia_page_info['description'] = description
+            negapedia_page_info['compact_message'] = compact_message
         for negapedia_page_info in negapedia_pages_info:
             negapedia_page_info['historical_conflict_comparison'] = historical_conflict_comparison
         for negapedia_page_info in negapedia_pages_info:
@@ -806,7 +811,7 @@ class NegapediaModule(BaseModule):
         return comparison_data_levels
 
     @staticmethod
-    def build_description(
+    def build_compact_message(
             title: str,
             recent_conflict_levels: Optional[str],
             recent_polemic_levels: Optional[str],
@@ -816,7 +821,7 @@ class NegapediaModule(BaseModule):
             social_jumps: List[dict]
     ) -> str:
         """
-        Builds a textual description based on provided conflict and polemic levels, important words, awards, and social jumps.
+        Builds a textual compact message based on provided conflict and polemic levels, important words, awards, and social jumps.
 
         Args:
             title (str): The title of the topic being analyzed.
@@ -828,65 +833,65 @@ class NegapediaModule(BaseModule):
             social_jumps (List[dict]): List of social jumps.
 
         Returns:
-            str: A formatted description string.
+            str: A formatted compact message string.
         """
-        # Initialize description string
-        description = ""
+        # Initialize compact message string
+        compact_message = ""
 
         # Add sections for recent conflict and polemic levels
-        description += "RECENT CONFLICT LEVELS:\n"
-        description += f" - Conflict Level at {title}: {recent_conflict_levels or 'N/A'}\n"
-        description += "\n"
+        compact_message += "RECENT CONFLICT LEVELS:\n"
+        compact_message += f" - Conflict Level at {title}: {recent_conflict_levels or 'N/A'}\n"
+        compact_message += "\n"
 
-        description += "RECENT POLEMIC LEVELS:\n"
-        description += f" - Polemic Level at {title}: {recent_polemic_levels or 'N/A'}\n"
-        description += "\n"
+        compact_message += "RECENT POLEMIC LEVELS:\n"
+        compact_message += f" - Polemic Level at {title}: {recent_polemic_levels or 'N/A'}\n"
+        compact_message += "\n"
 
         # Add a section for Important Words
         if words_that_matter:
-            description += "IMPORTANT WORDS (TOP 100):\n"
-            description += ", ".join(words_that_matter) + "...\n"
-            description += "\n"
+            compact_message += "IMPORTANT WORDS (TOP 100):\n"
+            compact_message += ", ".join(words_that_matter) + "...\n"
+            compact_message += "\n"
 
         # Add sections for Conflict Awards
         if conflict_awards:
-            description += "CONFLICT AWARDS:\n"
+            compact_message += "CONFLICT AWARDS:\n"
             # Global awards (all categories)
             if 'all' in conflict_awards and conflict_awards['all']:
-                description += "GLOBAL (IN ALL WIKIPEDIA):\n"
+                compact_message += "GLOBAL (IN ALL WIKIPEDIA):\n"
                 for award in conflict_awards['all']:
-                    description += f" - {award}\n"
+                    compact_message += f" - {award}\n"
 
             # Category-specific awards
             for category, awards in conflict_awards.items():
                 if category != 'all' and awards:
-                    description += f"CATEGORY SPECIFIC ({category.upper()}):\n"
+                    compact_message += f"CATEGORY SPECIFIC ({category.upper()}):\n"
                     for award in awards:
-                        description += f" - {award}\n"
-            description += "\n"
+                        compact_message += f" - {award}\n"
+            compact_message += "\n"
 
         # Add sections for Polemic Awards
         if polemic_awards:
-            description += "POLEMIC AWARDS:\n"
+            compact_message += "POLEMIC AWARDS:\n"
             # Global awards (all categories)
             if 'all' in polemic_awards and polemic_awards['all']:
-                description += "GLOBAL (IN ALL WIKIPEDIA):\n"
+                compact_message += "GLOBAL (IN ALL WIKIPEDIA):\n"
                 for award in polemic_awards['all']:
-                    description += f" - {award}\n"
+                    compact_message += f" - {award}\n"
 
             # Category-specific awards
             for category, awards in polemic_awards.items():
                 if category != 'all' and awards:
-                    description += f"CATEGORY SPECIFIC ({category.upper()}):\n"
+                    compact_message += f"CATEGORY SPECIFIC ({category.upper()}):\n"
                     for award in awards:
-                        description += f" - {award}\n"
-            description += "\n"
+                        compact_message += f" - {award}\n"
+            compact_message += "\n"
 
         # Add a section for Social Jumps
         if social_jumps:
-            description += "SOCIAL JUMPS (TOP 100):\n"
+            compact_message += "SOCIAL JUMPS (TOP 100):\n"
             for jump in social_jumps:
-                description += f" - {jump['title']}: {jump['link']}\n"
-            description += "\n"
+                compact_message += f" - {jump['title']}: {jump['link']}\n"
+            compact_message += "\n"
 
-        return description
+        return compact_message

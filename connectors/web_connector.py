@@ -10,14 +10,9 @@ def post_on_web(post_info, template, language, module):
         os.makedirs(output_dir)
 
     # Load the HTML template
-    if template == 'comparison':
-        with open(f'templates/{language}/{module}/web_post_comparison_template.html', 'r', encoding='utf-8') as template_file:
-            template_content = template_file.read()
-    elif template == 'summary':
-        with open(f'templates/{language}/{module}/web_post_summary_template.html', 'r', encoding='utf-8') as template_file:
-            template_content = template_file.read()
-    else:
-        print("Passed template is not accepted.")
+    template_content = load_template(template, language, module)
+    if not template_content:
+        print("Template could not be loaded.")
         return
 
     filled_content = template_content
@@ -37,7 +32,21 @@ def post_on_web(post_info, template, language, module):
         output_file.write(filled_content)
 
     print(f"Web page created successfully: {file_path}")
+
     return file_path
+
+
+def load_template(template, language, module):
+    """
+    Loads the HTML template content.
+    """
+    try:
+        file_path = f'templates/{language}/{module}/web_post_{template}_template.html'
+        with open(file_path, 'r', encoding='utf-8') as template_file:
+            return template_file.read()
+    except FileNotFoundError:
+        print(f"Template file {file_path} not found.")
+        return None
 
 
 def convert_negapediapageinfo_to_filled_content(post_info, filled_content, template):
@@ -46,149 +55,75 @@ def convert_negapediapageinfo_to_filled_content(post_info, filled_content, templ
     topic2 = post_info[1] if len(post_info) > 1 else None
 
     # Process first topic
-    topic1_title = topic1.get('title', 'Topic 1')
-    conflict_levels_1 = ', '.join([topic1.get('recent_conflict_levels', [])])
-    polemic_levels_1 = ', '.join([topic1.get('recent_polemic_levels', [])])
-    important_words_1 = ', '.join(topic1.get('words_that_matter', []))
-    conflict_awards_1 = construct_awards_html(topic1.get('conflict_awards', {}))
-    polemic_awards_1 = construct_awards_html(topic1.get('polemic_awards', {}))
-    social_jumps_1 = ', '.join(
-        [f"<a href='{jump['link']}'>{jump['title']}</a>" for jump in topic1.get('social_jumps', [])])
-
-    images_html_1 = ''
-    for image_info in (topic1.get('historical_conflict', []) or []) + (topic1.get('historical_polemic', []) or []):
-        src = image_info.get('image')
-        width = image_info.get('image_width')
-        height = image_info.get('image_height')
-        alt = image_info.get('image_alt') or "Image"
-        location = image_info.get('location')
-
-        if width and height:
-            image_tag = f'<img src="{src}" alt="{alt}" width="{width}" height="{height}">'
-        else:
-            image_tag = f'<img src="{src}" alt="{alt}">'
-
-        images_html_1 += image_tag
-
-    comparison_images_html = ''
-    for image_info in (topic1.get('historical_conflict_comparison', []) or []) + (topic1.get('historical_polemic_comparison', []) or []):
-        src = image_info.get('image')
-        width = image_info.get('image_width')
-        height = image_info.get('image_height')
-        alt = image_info.get('image_alt') or "Image"
-        location = image_info.get('location')
-
-        if width and height:
-            image_tag = f'<img src="{src}" alt="{alt}" width="{width}" height="{height}">'
-        else:
-            image_tag = f'<img src="{src}" alt="{alt}">'
-
-        comparison_images_html += image_tag
-
-    # Replace placeholders for the first topic
-    filled_content = filled_content.replace('{{topic1_title}}', str(topic1_title))
-    filled_content = filled_content.replace('{{conflict_levels_1}}', str(conflict_levels_1))
-    filled_content = filled_content.replace('{{polemic_levels_1}}', str(polemic_levels_1))
-    filled_content = filled_content.replace('{{important_words_1}}', str(important_words_1))
-    filled_content = filled_content.replace('{{conflict_awards_1}}', str(conflict_awards_1))
-    filled_content = filled_content.replace('{{polemic_awards_1}}', str(polemic_awards_1))
-    filled_content = filled_content.replace('{{social_jumps_1}}', str(social_jumps_1))
-    filled_content = filled_content.replace('{{images_1}}', str(images_html_1))
-    filled_content = filled_content.replace('{{comparison_images}}', str(comparison_images_html))
+    filled_content = replace_topic_content(filled_content, topic1, '1')
 
     # Process second topic if it exists
     if topic2:
-        topic2_title = topic2.get('title', 'Topic 2')
-        conflict_levels_2 = ', '.join([topic2.get('recent_conflict_levels', [])])
-        polemic_levels_2 = ', '.join([topic2.get('recent_polemic_levels', [])])
-        important_words_2 = ', '.join(topic2.get('words_that_matter', []))
-        conflict_awards_2 = construct_awards_html(topic2.get('conflict_awards', {}))
-        polemic_awards_2 = construct_awards_html(topic2.get('polemic_awards', {}))
-        social_jumps_2 = ', '.join(
-            [f"<a href='{jump['link']}'>{jump['title']}</a>" for jump in topic2.get('social_jumps', [])])
-
-        images_html_2 = ''
-        for image_info in (topic2.get('historical_conflict', []) or []) + (topic2.get('historical_polemic', []) or []):
-            src = image_info.get('image')
-            width = image_info.get('image_width')
-            height = image_info.get('image_height')
-            alt = image_info.get('image_alt') or "Image"
-            location = image_info.get('location')
-
-            if width and height:
-                image_tag = f'<img src="{src}" alt="{alt}" width="{width}" height="{height}">'
-            else:
-                image_tag = f'<img src="{src}" alt="{alt}">'
-
-            images_html_2 += image_tag
-
-        # Replace placeholders for the second topic
-        filled_content = filled_content.replace('{{topic2_title}}', str(topic2_title))
-        filled_content = filled_content.replace('{{conflict_levels_2}}', str(conflict_levels_2))
-        filled_content = filled_content.replace('{{polemic_levels_2}}', str(polemic_levels_2))
-        filled_content = filled_content.replace('{{important_words_2}}', str(important_words_2))
-        filled_content = filled_content.replace('{{conflict_awards_2}}', str(conflict_awards_2))
-        filled_content = filled_content.replace('{{polemic_awards_2}}', str(polemic_awards_2))
-        filled_content = filled_content.replace('{{social_jumps_2}}', str(social_jumps_2))
-        filled_content = filled_content.replace('{{images_2}}', str(images_html_2))
+        filled_content = replace_topic_content(filled_content, topic2, '2')
     else:
-        # If no second topic is provided, clear the placeholders for topic 2
-        filled_content = re.sub(r'{{topic2_title}}.*\n?', '', filled_content)
-        filled_content = re.sub(r'{{conflict_levels_2}}.*\n?', '', filled_content)
-        filled_content = re.sub(r'{{polemic_levels_2}}.*\n?', '', filled_content)
-        filled_content = re.sub(r'{{important_words_2}}.*\n?', '', filled_content)
-        filled_content = re.sub(r'{{conflict_awards_2}}.*\n?', '', filled_content)
-        filled_content = re.sub(r'{{polemic_awards_2}}.*\n?', '', filled_content)
-        filled_content = re.sub(r'{{social_jumps_2}}.*\n?', '', filled_content)
-        filled_content = re.sub(r'{{images_2}}.*\n?', '', filled_content)
+        filled_content = clear_second_topic_placeholders(filled_content)    # {{to_check}} do we really need it?
 
     # Replace placeholders for the general title
-    if template == 'comparison':
-        title = f"Comparison between {topic1_title} and {topic2_title} Negapedia pages"
-    else:
-        title = f"Summary for {topic1_title} Negapedia page"
-    filled_content = filled_content.replace('{{title}}', str(title))
+    filled_content = replace_main_title(filled_content, topic1, topic2, template)
 
     # Replace placeholders for the page description
-    description = topic1.get('message') or ""
-    filled_content = filled_content.replace('{{description}}', str(description))
+    filled_content = replace_description(filled_content, topic1)
 
     return filled_content
 
 
 def convert_pageinfo_to_filled_content(post_info, filled_content, template):
-    title = post_info.get('title') or "No Title"
+    filled_content = replace_title(filled_content, post_info, '{{title}}')
+    filled_content = replace_description(filled_content, post_info)
+    filled_content = replace_images(filled_content, (post_info.get('images', []) or []), '{{images}}')
+    filled_content = replace_urls(filled_content, post_info)
+    filled_content = replace_video(filled_content, post_info)
+    filled_content = replace_audio(filled_content, post_info)
+    filled_content = replace_optional_fields(filled_content, post_info)
+
+    return filled_content
+
+
+def replace_title(filled_content, post_info, template_variable_to_fill):
+    title = post_info.get('title', 'No Title')
+
+    return filled_content.replace(template_variable_to_fill, str(title))
+
+
+def replace_description(filled_content, post_info):
     description = post_info.get('message') or post_info.get('description') or ""
 
+    return filled_content.replace('{{description}}', str(description))
+
+
+def replace_images(filled_content, images, template_variable_to_fill):
     images_html = ''
-    for image_info in (post_info.get('images', []) or []):
+    for image_info in images:
         src = image_info.get('image')
         width = image_info.get('image_width')
         height = image_info.get('image_height')
         alt = image_info.get('image_alt') or "Image"
         location = image_info.get('location')
 
-        src_prefix = "" if location == "web" else "../"
-
         if width and height:
-            image_tag = f'<img src="{src_prefix}{src}" alt="{alt}" width="{width}" height="{height}">'
+            image_tag = f'<img src="{src}" alt="{alt}" width="{width}" height="{height}">'
         else:
-            image_tag = f'<img src="{src_prefix}{src}" alt="{alt}">'
+            image_tag = f'<img src="{src}" alt="{alt}">'
 
         images_html += image_tag
 
+    return filled_content.replace(template_variable_to_fill, str(images_html))
+
+
+def replace_urls(filled_content, post_info):
     urls_html = ''
     for url in post_info.get('urls', []):
-        url_tag = f'<li><a href="{url}">{url}</a></li>'
-        urls_html += url_tag
+        urls_html += f'<li><a href="{url}">{url}</a></li>'
 
-    # Replace placeholders with dynamic content and ensure all values are strings
-    filled_content = filled_content.replace('{{title}}', str(title))
-    filled_content = filled_content.replace('{{description}}', str(description))
-    filled_content = filled_content.replace('{{images}}', str(images_html))
-    filled_content = filled_content.replace('{{urls}}', str(urls_html))
+    return filled_content.replace('{{urls}}', str(urls_html))
 
-    # Manually insert video and audio if they exist
+
+def replace_video(filled_content, post_info):
     video_html = ''
     if post_info.get('video'):
         video_html = f'''
@@ -197,8 +132,11 @@ def convert_pageinfo_to_filled_content(post_info, filled_content, template):
                 Your browser does not support the video tag.
             </video>
         '''
-    filled_content = filled_content.replace('{{video}}', video_html)
 
+    return filled_content.replace('{{video}}', video_html)
+
+
+def replace_audio(filled_content, post_info):
     audio_html = ''
     if post_info.get('audio'):
         audio_html = f'''
@@ -207,8 +145,11 @@ def convert_pageinfo_to_filled_content(post_info, filled_content, template):
                 Your browser does not support the audio element.
             </audio>
         '''
-    filled_content = filled_content.replace('{{audio}}', audio_html)
 
+    return filled_content.replace('{{audio}}', audio_html)
+
+
+def replace_optional_fields(filled_content, post_info):
     optional_fields = {
         '{{updated_time}}': post_info.get('updated_time', ''),
         '{{article_published_time}}': post_info.get('article_published_time', ''),
@@ -226,6 +167,83 @@ def convert_pageinfo_to_filled_content(post_info, filled_content, template):
     return filled_content
 
 
+def replace_topic_content(filled_content, topic, topic_number):
+    filled_content = replace_title(filled_content, topic, f'{{{{topic{topic_number}_title}}}}')
+    filled_content = replace_recent_conflict_levels(filled_content, topic, topic_number)
+    filled_content = replace_recent_polemic_levels(filled_content, topic, topic_number)
+    filled_content = replace_words_that_matter(filled_content, topic, topic_number)
+    filled_content = replace_conflict_awards(filled_content, topic, topic_number)
+    filled_content = replace_polemic_awards(filled_content, topic, topic_number)
+    filled_content = replace_social_jumps(filled_content, topic, topic_number)
+    filled_content = replace_images(filled_content, (topic.get('historical_conflict', []) or []) + (topic.get('historical_polemic', []) or []), f'{{{{images_{topic_number}}}}}')
+    filled_content = replace_images(filled_content, (topic.get('historical_conflict_comparison', []) or []) + (topic.get('historical_polemic_comparison', []) or []), '{{comparison_images}}')
+
+    return filled_content
+
+
+def replace_recent_conflict_levels(filled_content, topic, topic_number):
+    conflict_levels = ', '.join([topic.get('recent_conflict_levels', [])])
+
+    return filled_content.replace(f'{{{{conflict_levels_{topic_number}}}}}', str(conflict_levels))
+
+
+def replace_recent_polemic_levels(filled_content, topic, topic_number):
+    polemic_levels = ', '.join([topic.get('recent_polemic_levels', [])])
+
+    return filled_content.replace(f'{{{{polemic_levels_{topic_number}}}}}', str(polemic_levels))
+
+
+def replace_words_that_matter(filled_content, topic, topic_number):
+    important_words = ', '.join(topic.get('words_that_matter', []))
+
+    return filled_content.replace(f'{{{{important_words_{topic_number}}}}}', str(important_words))
+
+
+def replace_conflict_awards(filled_content, topic, topic_number):
+    conflict_awards = construct_awards_html(topic.get('conflict_awards', {}))
+
+    return filled_content.replace(f'{{{{conflict_awards_{topic_number}}}}}', str(conflict_awards))
+
+
+def replace_polemic_awards(filled_content, topic, topic_number):
+    polemic_awards = construct_awards_html(topic.get('polemic_awards', {}))
+
+    return filled_content.replace(f'{{{{polemic_awards_{topic_number}}}}}', str(polemic_awards))
+
+
+def replace_social_jumps(filled_content, topic, topic_number):
+    social_jumps = ', '.join([f"<a href='{jump['link']}'>{jump['title']}</a>" for jump in topic.get('social_jumps', [])])
+
+    return filled_content.replace(f'{{{{social_jumps_{topic_number}}}}}', str(social_jumps))
+
+
+def clear_second_topic_placeholders(filled_content):
+    placeholders = [
+        '{{topic2_title}}',
+        '{{conflict_levels_2}}',
+        '{{polemic_levels_2}}',
+        '{{important_words_2}}',
+        '{{conflict_awards_2}}',
+        '{{polemic_awards_2}}',
+        '{{social_jumps_2}}',
+        '{{images_2}}'
+    ]
+
+    for placeholder in placeholders:
+        filled_content = re.sub(rf'{placeholder}.*\n?', '', filled_content)
+
+    return filled_content
+
+
+def replace_main_title(filled_content, topic1, topic2, template):
+    if template == 'comparison':
+        title = f"Comparison between {topic1.get('title', 'Topic 1')} and {topic2.get('title', 'Topic 2')} Negapedia pages"
+    else:
+        title = f"Summary for {topic1.get('title', 'Topic 1')} Negapedia page"
+
+    return filled_content.replace('{{title}}', str(title))
+
+
 # Constructing awards sections dynamically
 def construct_awards_html(awards_dict):
     awards_html = ""
@@ -241,4 +259,5 @@ def construct_awards_html(awards_dict):
             awards_html += f"<strong>CATEGORY SPECIFIC ({category.upper()}):</strong><br>"
             awards_html += "<br>".join([f"- {award}" for award in awards])
             awards_html += "<br>"
+
     return awards_html
