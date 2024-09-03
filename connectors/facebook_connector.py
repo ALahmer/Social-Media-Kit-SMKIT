@@ -177,7 +177,7 @@ def replace_images_alt(filled_content, images, template_variable_to_fill):
             images_alt += f'\n- {alt}'
 
     if images_alt.strip():  # Check if any alt text is found
-        return filled_content.replace(template_variable_to_fill, str(images_alt.strip()))
+        return filled_content.replace(template_variable_to_fill, str(images_alt))
     else:
         # Remove the line if there is no alt text
         return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
@@ -210,7 +210,7 @@ def replace_urls(filled_content, post_info):
             urls += f'\n- {url}'
 
     if urls.strip():  # Check if any URL is found
-        return filled_content.replace('{{urls}}', str(urls.strip()))
+        return filled_content.replace('{{urls}}', str(urls))
     else:
         # Remove the line if there is no URL
         return re.sub(r'^.*{{urls}}.*\n?', '', filled_content, flags=re.MULTILINE)
