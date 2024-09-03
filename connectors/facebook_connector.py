@@ -78,19 +78,19 @@ def post_on_facebook(post_info, template, language, module):
             filled_content = convert_negapediapageinfo_to_summary_filled_content(topic1, filled_content, template)
             images = (topic1.get('historical_conflict', []) or []) + (topic1.get('historical_polemic', []) or [])
         elif template == 'comparison':
-            filled_content = convert_negapediapageinfo_to_comparison_filled_content(post_info, filled_content, template)
-            images = (topic1.get('historical_conflict', []) or []) + (topic1.get('historical_polemic', []) or []) +\
-                     (topic2.get('historical_conflict', []) or []) + (topic2.get('historical_polemic', []) or []) +\
-                     (topic1.get('historical_conflict_comparison', []) or []) + (topic1.get('historical_polemic_comparison', []) or [])
+            filled_content = convert_negapediapageinfo_to_comparison_filled_content(topic1, topic2, filled_content, template)
+            images = (topic1.get('historical_conflict_comparison', []) or []) + (topic1.get('historical_polemic_comparison', []) or []) +\
+                     (topic1.get('historical_conflict', []) or []) + (topic1.get('historical_polemic', []) or []) +\
+                     (topic2.get('historical_conflict', []) or []) + (topic2.get('historical_polemic', []) or [])
     else:
         filled_content = convert_pageinfo_to_filled_content(post_info, filled_content)
         images = post_info.get('images', []) or []
 
     # Post the message to your page
-    post_to_facebook(graph, post_info, filled_content, images)
+    post_to_facebook(graph, filled_content, images)
 
 
-def post_to_facebook(graph, post_info, message, images):
+def post_to_facebook(graph, message, images):
     if images:
         media_ids = []
         for image_info in images:
@@ -145,8 +145,12 @@ def load_template(template, language, module):
 
 def convert_pageinfo_to_filled_content(post_info, filled_content):
     filled_content = replace_title(filled_content, post_info, '{{title}}')
-    filled_content = replace_description(filled_content, post_info)
-    filled_content = replace_images_alt(filled_content, (post_info.get('images', []) or []), '{{images_alt}}')
+    filled_content = replace_description(filled_content, post_info, '{{description}}')
+    filled_content = replace_images_alt(
+        filled_content,
+        (post_info.get('images', []) or []),
+        '{{images_alt}}'
+    )
     filled_content = replace_optional_fields(filled_content, post_info)
     filled_content = replace_urls(filled_content, post_info)
     return filled_content
@@ -154,19 +158,63 @@ def convert_pageinfo_to_filled_content(post_info, filled_content):
 
 def convert_negapediapageinfo_to_summary_filled_content(post_info, filled_content, template):
     filled_content = replace_negapedia_template_title(filled_content, post_info, None, template, '{{title}}')
-    filled_content = replace_description(filled_content, post_info)
-    filled_content = replace_recent_conflict_levels(filled_content, post_info)
-    filled_content = replace_recent_polemic_levels(filled_content, post_info)
-    filled_content = replace_important_words(filled_content, post_info)
-    filled_content = replace_conflict_awards(filled_content, post_info)
-    filled_content = replace_polemic_awards(filled_content, post_info)
-    filled_content = replace_social_jumps(filled_content, post_info)
-    filled_content = replace_images_alt(filled_content, (post_info.get('historical_conflict', []) or []) + (post_info.get('historical_polemic', []) or []), '{{images_alt}}')
+    filled_content = replace_description(filled_content, post_info, '{{description}}')
+    filled_content = replace_recent_conflict_levels(filled_content, post_info, '{{recent_conflict_levels}}')
+    filled_content = replace_recent_polemic_levels(filled_content, post_info, '{{recent_polemic_levels}}')
+    filled_content = replace_important_words(filled_content, post_info, '{{important_words}}')
+    filled_content = replace_conflict_awards(filled_content, post_info, '{{conflict_awards}}')
+    filled_content = replace_polemic_awards(filled_content, post_info, '{{polemic_awards}}')
+    filled_content = replace_social_jumps(filled_content, post_info, '{{social_jumps}}')
+    filled_content = replace_images_alt(
+        filled_content,
+        (post_info.get('historical_conflict', []) or []) + (post_info.get('historical_polemic', []) or []),
+        '{{images_alt}}'
+    )
     return filled_content
 
 
-def convert_negapediapageinfo_to_comparison_filled_content(post_info, filled_content, template):
-    # {{to_do}}
+def convert_negapediapageinfo_to_comparison_filled_content(topic1_post_info, topic2_post_info, filled_content, template):
+    # Replace the titles
+    filled_content = replace_negapedia_template_title(filled_content, topic1_post_info, topic2_post_info, template, '{{title}}')
+    filled_content = replace_topics_titles(filled_content, topic1_post_info, '{{topic1_title}}')
+    filled_content = replace_topics_titles(filled_content, topic2_post_info, '{{topic2_title}}')
+
+    # Replace descriptions for both topics
+    filled_content = replace_description(filled_content, topic1_post_info, '{{description_topic1}}')
+    filled_content = replace_description(filled_content, topic2_post_info, '{{description_topic2}}')
+
+    # Replace recent conflict and polemic levels for both topics
+    filled_content = replace_recent_conflict_levels(filled_content, topic1_post_info, '{{recent_conflict_levels_topic1}}')
+    filled_content = replace_recent_conflict_levels(filled_content, topic2_post_info, '{{recent_conflict_levels_topic2}}')
+    filled_content = replace_recent_polemic_levels(filled_content, topic1_post_info, '{{recent_polemic_levels_topic1}}')
+    filled_content = replace_recent_polemic_levels(filled_content, topic2_post_info, '{{recent_polemic_levels_topic2}}')
+
+    # Replace important words for both topics
+    filled_content = replace_important_words(filled_content, topic1_post_info, '{{important_words_topic1}}')
+    filled_content = replace_important_words(filled_content, topic2_post_info, '{{important_words_topic2}}')
+
+    # Replace conflict and polemic awards for both topics
+    filled_content = replace_conflict_awards(filled_content, topic1_post_info, '{{conflict_awards_topic1}}')
+    filled_content = replace_conflict_awards(filled_content, topic2_post_info, '{{conflict_awards_topic2}}')
+    filled_content = replace_polemic_awards(filled_content, topic1_post_info, '{{polemic_awards_topic1}}')
+    filled_content = replace_polemic_awards(filled_content, topic2_post_info, '{{polemic_awards_topic2}}')
+
+    # Replace social jumps for both topics
+    filled_content = replace_social_jumps(filled_content, topic1_post_info, '{{social_jumps_topic1}}')
+    filled_content = replace_social_jumps(filled_content, topic2_post_info, '{{social_jumps_topic2}}')
+
+    # Replace images alt for both topics
+    filled_content = replace_images_alt(
+        filled_content,
+        (topic1_post_info.get('historical_conflict_comparison', []) or []) +
+        (topic1_post_info.get('historical_polemic_comparison', []) or []) +
+        (topic1_post_info.get('historical_conflict', []) or []) +
+        (topic1_post_info.get('historical_polemic', []) or []) +
+        (topic2_post_info.get('historical_conflict', []) or []) +
+        (topic2_post_info.get('historical_polemic', []) or []),
+        '{{images_alt}}'
+    )
+
     return filled_content
 
 
@@ -193,14 +241,19 @@ def replace_negapedia_template_title(filled_content, topic1, topic2, template, t
         return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
 
 
-def replace_description(filled_content, post_info):
+def replace_topics_titles(filled_content, post_info, template_variable_to_fill):
+    title = post_info.get('title', 'No Title')
+    return filled_content.replace(template_variable_to_fill, str(title))
+
+
+def replace_description(filled_content, post_info, template_variable_to_fill):
     description = post_info.get('message') or post_info.get('description') or ""
 
     if description:
-        return filled_content.replace('{{description}}', str(description))
+        return filled_content.replace(template_variable_to_fill, str(description))
     else:
         # Remove the line if there is no description
-        return re.sub(r'^.*{{description}}.*\n?', '', filled_content, flags=re.MULTILINE)
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
 
 
 def replace_images_alt(filled_content, images, template_variable_to_fill):
@@ -254,55 +307,58 @@ def replace_urls(filled_content, post_info):
         return re.sub(r'^.*{{urls}}.*\n?', '', filled_content, flags=re.MULTILINE)
 
 
-def replace_recent_conflict_levels(filled_content, post_info):
+def replace_recent_conflict_levels(filled_content, post_info, template_variable_to_fill):
     # Handle recent_conflict_levels as a string
     recent_conflict_levels = post_info.get('recent_conflict_levels', '')
 
     if recent_conflict_levels:
-        return filled_content.replace('{{recent_conflict_levels}}', recent_conflict_levels)
+        return filled_content.replace(template_variable_to_fill, recent_conflict_levels)
     else:
-        return re.sub(r'^.*{{recent_conflict_levels}}.*\n?', '', filled_content, flags=re.MULTILINE)
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
 
 
-def replace_recent_polemic_levels(filled_content, post_info):
+def replace_recent_polemic_levels(filled_content, post_info, template_variable_to_fill):
     # Handle recent_polemic_levels as a string
     recent_polemic_levels = post_info.get('recent_polemic_levels', '')
 
     if recent_polemic_levels:
-        return filled_content.replace('{{recent_polemic_levels}}', recent_polemic_levels)
+        return filled_content.replace(template_variable_to_fill, recent_polemic_levels)
     else:
-        return re.sub(r'^.*{{recent_polemic_levels}}.*\n?', '', filled_content, flags=re.MULTILINE)
+        # Remove the line if there are no recent polemic levels
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
 
 
-def replace_important_words(filled_content, post_info):
+def replace_important_words(filled_content, post_info, template_variable_to_fill):
     important_words = ''
     for important_word in post_info.get('words_that_matter', []):
         if important_word:
             important_words += f'\n- {important_word}'
 
     if important_words.strip():
-        return filled_content.replace('{{important_words}}', str(important_words))
+        return filled_content.replace(template_variable_to_fill, str(important_words))
     else:
-        # Remove the line if there is no URL
-        return re.sub(r'^.*{{important_words}}.*\n?', '', filled_content, flags=re.MULTILINE)
+        # Remove the line if there are no important words
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
 
 
-def replace_conflict_awards(filled_content, post_info):
+def replace_conflict_awards(filled_content, post_info, template_variable_to_fill):
     conflict_awards = construct_awards_text(post_info.get('conflict_awards', {}))
 
     if conflict_awards.strip():
-        return filled_content.replace('{{conflict_awards}}', str(conflict_awards))
+        return filled_content.replace(template_variable_to_fill, str(conflict_awards))
     else:
-        return re.sub(r'^.*{{conflict_awards}}.*\n?', '', filled_content, flags=re.MULTILINE)
+        # Remove the line if there are no conflict awards
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
 
 
-def replace_polemic_awards(filled_content, post_info):
+def replace_polemic_awards(filled_content, post_info, template_variable_to_fill):
     polemic_awards = construct_awards_text(post_info.get('polemic_awards', {}))
 
     if polemic_awards.strip():
-        return filled_content.replace('{{polemic_awards}}', str(polemic_awards))
+        return filled_content.replace(template_variable_to_fill, str(polemic_awards))
     else:
-        return re.sub(r'^.*{{polemic_awards}}.*\n?', '', filled_content, flags=re.MULTILINE)
+        # Remove the line if there are no polemic awards
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
 
 
 def construct_awards_text(awards_dict):
@@ -321,14 +377,14 @@ def construct_awards_text(awards_dict):
     return awards_text
 
 
-def replace_social_jumps(filled_content, post_info):
+def replace_social_jumps(filled_content, post_info, template_variable_to_fill):
     social_jumps = ''
     for social_jump in post_info.get('social_jumps', []):
         if social_jump:
             social_jumps += f"\n* {social_jump['title']}: {social_jump['link']}"
 
     if social_jumps.strip():
-        return filled_content.replace('{{social_jumps}}', str(social_jumps))
+        return filled_content.replace(template_variable_to_fill, str(social_jumps))
     else:
-        # Remove the line if there is no URL
-        return re.sub(r'^.*{{social_jumps}}.*\n?', '', filled_content, flags=re.MULTILINE)
+        # Remove the line if there are no social jumps
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
