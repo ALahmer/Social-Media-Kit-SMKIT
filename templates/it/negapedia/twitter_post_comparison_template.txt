@@ -1,25 +1,11 @@
 Titolo del post: {{title}}
 
-Topic 1: {{topic1_title}}
-
 {{description_topic1}}
 
 Livello di Conflitto Recente per {{topic1_title}}: {{recent_conflict_levels_topic1}}
 Livello di Polemica Recente per {{topic1_title}}: {{recent_polemic_levels_topic1}}
 
-Parole Importanti per {{topic1_title}}: {{important_words_topic1}}
-
 ---
-
-Topic 2: {{topic2_title}}
-
-{{description_topic2}}
 
 Livello di Conflitto Recente per {{topic2_title}}: {{recent_conflict_levels_topic2}}
 Livello di Polemica Recente per {{topic2_title}}: {{recent_polemic_levels_topic2}}
-
-Parole Importanti for {{topic2_title}}: {{important_words_topic2}}
-
----
-
-Testo alternativo immagini per i topic {{topic1_title}} e {{topic2_title}}: {{images_alt}}

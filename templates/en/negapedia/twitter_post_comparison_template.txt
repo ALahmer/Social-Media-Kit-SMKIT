@@ -1,25 +1,11 @@
 Title of the post: {{title}}
 
-Topic 1: {{topic1_title}}
-
 {{description_topic1}}
 
 Recent Conflict Levels for {{topic1_title}}: {{recent_conflict_levels_topic1}}
 Recent Polemic Levels for {{topic1_title}}: {{recent_polemic_levels_topic1}}
 
-Important Words for {{topic1_title}}: {{important_words_topic1}}
-
 ---
-
-Topic 2: {{topic2_title}}
-
-{{description_topic2}}
 
 Recent Conflict Levels for {{topic2_title}}: {{recent_conflict_levels_topic2}}
 Recent Polemic Levels for {{topic2_title}}: {{recent_polemic_levels_topic2}}
-
-Important Words for {{topic2_title}}: {{important_words_topic2}}
-
----
-
-Media's Alt for {{topic1_title}} and {{topic2_title}} topics: {{images_alt}}
