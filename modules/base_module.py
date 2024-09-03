@@ -107,7 +107,7 @@ class BaseModule(ABC):
                 #     input("Press Enter after completing authentication in the browser...")
                 post_on_facebook(post_info, mode, language, self.module)
             elif channel == 'twitter':
-                post_on_twitter(post_info, language)
+                post_on_twitter(post_info, mode, language, self.module)
             elif channel == 'web':
                 post_on_web(post_info, mode, language, self.module)
             else:

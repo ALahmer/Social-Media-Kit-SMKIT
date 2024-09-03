@@ -1,0 +1,5 @@
+Title of the post: {{title}}
+
+{{description}}
+
+Media's Alt: {{images_alt}}
