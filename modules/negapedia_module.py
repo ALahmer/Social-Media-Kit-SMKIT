@@ -19,6 +19,7 @@ import os
 
 class NegapediaModule(BaseModule):
     module = 'negapedia'
+    extraction_settings = {}
 
     def handle_module(self, args: Any) -> None:
         """
@@ -41,6 +42,14 @@ class NegapediaModule(BaseModule):
         elif args.mode == 'comparison':
             if len(args.pages) != 2:
                 raise ValueError("The 'comparison' mode requires exactly two URLs in the '--pages' argument.")  # {{to_fix}} just print the error and return otherwise it will print the track trace on console
+
+        # Save extraction settings
+        self.extraction_settings = {
+            "number_of_words_that_matter_to_extract": args.number_of_words_that_matter_to_extract,
+            "number_of_conflict_awards_to_extract": args.number_of_conflict_awards_to_extract,
+            "number_of_polemic_awards_to_extract": args.number_of_polemic_awards_to_extract,
+            "number_of_social_jumps_to_extract": args.number_of_social_jumps_to_extract,
+        }
 
         logging.info(f"Handling negapedia module for Pages {args.pages}")
         self.process_pages(
@@ -124,10 +133,10 @@ class NegapediaModule(BaseModule):
             NegapediaPageInfo: Negapedia page information.
         """
         env_data = load_from_env()
-        number_of_words_that_matter_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
-        number_of_conflict_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_conflict_awards_to_extract')
-        number_of_polemic_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_polemic_awards_to_extract')
-        number_of_social_jumps_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_social_jumps_to_extract')
+        number_of_words_that_matter_to_extract = self.extraction_settings.get('number_of_words_that_matter_to_extract') or env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
+        number_of_conflict_awards_to_extract = self.extraction_settings.get('number_of_conflict_awards_to_extract') or env_data.get('modules').get(f'{self.module}').get('number_of_conflict_awards_to_extract')
+        number_of_polemic_awards_to_extract = self.extraction_settings.get('number_of_polemic_awards_to_extract') or env_data.get('modules').get(f'{self.module}').get('number_of_polemic_awards_to_extract')
+        number_of_social_jumps_to_extract = self.extraction_settings.get('number_of_social_jumps_to_extract') or env_data.get('modules').get(f'{self.module}').get('number_of_social_jumps_to_extract')
 
         # extract the only url to process
         url = urls[0]
@@ -210,10 +219,10 @@ class NegapediaModule(BaseModule):
             List[NegapediaPageInfo]: Negapedia page information.
         """
         env_data = load_from_env()
-        number_of_words_that_matter_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
-        number_of_conflict_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_conflict_awards_to_extract')
-        number_of_polemic_awards_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_polemic_awards_to_extract')
-        number_of_social_jumps_to_extract = env_data.get('modules').get(f'{self.module}').get('number_of_social_jumps_to_extract')
+        number_of_words_that_matter_to_extract = self.extraction_settings.get('number_of_words_that_matter_to_extract') or env_data.get('modules').get(f'{self.module}').get('number_of_words_that_matter_to_extract')
+        number_of_conflict_awards_to_extract = self.extraction_settings.get('number_of_conflict_awards_to_extract') or env_data.get('modules').get(f'{self.module}').get('number_of_conflict_awards_to_extract')
+        number_of_polemic_awards_to_extract = self.extraction_settings.get('number_of_polemic_awards_to_extract') or env_data.get('modules').get(f'{self.module}').get('number_of_polemic_awards_to_extract')
+        number_of_social_jumps_to_extract = self.extraction_settings.get('number_of_social_jumps_to_extract') or env_data.get('modules').get(f'{self.module}').get('number_of_social_jumps_to_extract')
 
         # Initialize variables
         compact_message = None

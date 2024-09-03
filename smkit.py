@@ -14,20 +14,24 @@ def main():
     parser.add_argument('--base_directory', type=str, help='Specify the filesystem website base directory (e.g., /var/www/negapedia/en/html)')
     parser.add_argument('--base_url', type=str, help='Specify the website base url (e.g., http://en.negapedia.org)')
     parser.add_argument('--remove_suffix', action='store_true', help='Remove .html or .htm suffixes from URLs')
+    parser.add_argument('--number_of_words_that_matter_to_extract', type=int, help='Number of important words to extract')
+    parser.add_argument('--number_of_conflict_awards_to_extract', type=int, help='Number of conflict awards to extract')
+    parser.add_argument('--number_of_polemic_awards_to_extract', type=int, help='Number of polemic awards to extract')
+    parser.add_argument('--number_of_social_jumps_to_extract', type=int, help='Number of social jumps to extract')
 
     args = parser.parse_args()
 
     # args = {
     #     "module": "negapedia",
     #     # "module": None,
-    #     # "mode": "comparison",
-    #     "mode": "summary",
+    #     "mode": "comparison",
+    #     # "mode": "summary",
     #     "post_type": [
     #         "web",
     #         # "facebook",
     #         # "twitter",
     #                   ],
-    #     "message": None,
+    #     "message": "The hidden information behind the Wikipedia pages #Wikipedia #Negapedia",
     #     "language": 'en',
     #     # "pages": [
     #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/Barack_Obama.html.zip",
@@ -39,7 +43,7 @@ def main():
     #     #     "./virtual_local_server/var/www/negapedia/it/html"
     #     # ],
     #     "pages": [
-    #         # "http://it.negapedia.org/articles/Joe_Biden",
+    #         "http://it.negapedia.org/articles/Joe_Biden",
     #         "http://it.negapedia.org/articles/Donald_Trump",
     #         # "http://it.negapedia.org/articles/Barack_Obama",
     #         # "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/",
@@ -54,6 +58,10 @@ def main():
     #     "base_directory": None,
     #     "base_url": None,
     #     "remove_suffix": False,
+    #     "number_of_words_that_matter_to_extract": None,
+    #     "number_of_conflict_awards_to_extract": None,
+    #     "number_of_polemic_awards_to_extract": None,
+    #     "number_of_social_jumps_to_extract": None,
     # }
     # args = argparse.Namespace(**args)
 
