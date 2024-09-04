@@ -1,0 +1,17 @@
+Titolo del post: {{title}}
+
+{{description}}
+
+Classifica sui campi: {{ranking_field}}
+
+Classifica Livello di Conflitto Recente: {{recent_conflict_levels_ranking}}
+
+Classifica Livello di Polemica Recente: {{recent_polemic_levels_ranking}}
+
+Classifica Media Livelli di Conflitto: {{mean_conflict_level_ranking}}
+
+Classifica Media Livelli di Polemica: {{mean_polemic_level_ranking}}
+
+---
+
+Testo alternativo immagini: {{images_alt}}
