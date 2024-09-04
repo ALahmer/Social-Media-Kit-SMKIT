@@ -1,9 +1,11 @@
 import os
 import re
 from datetime import datetime
+from utils.env_management import load_from_env
+from bs4 import BeautifulSoup
 
 
-def post_on_web(post_info, template, language, module):
+def post_on_web(post_info, template, language, module, posting_settings):
     # Ensure the 'pages_to_post' directory exists
     output_dir = 'pages_to_post'
     if not os.path.exists(output_dir):
@@ -18,9 +20,9 @@ def post_on_web(post_info, template, language, module):
     filled_content = template_content
 
     if module == 'negapedia':
-        filled_content = convert_negapediapageinfo_to_filled_content(post_info, filled_content, template)
+        filled_content = convert_negapediapageinfo_to_filled_content(post_info, filled_content, template, language, posting_settings)
     else:
-        filled_content = convert_pageinfo_to_filled_content(post_info, filled_content, template)
+        filled_content = convert_pageinfo_to_filled_content(post_info, filled_content, template, posting_settings)
 
     # Create a unique filename based on the current timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -49,7 +51,7 @@ def load_template(template, language, module):
         return None
 
 
-def convert_negapediapageinfo_to_filled_content(post_info, filled_content, template):
+def convert_negapediapageinfo_to_filled_content(post_info, filled_content, template, language, posting_settings):
     # Handle NegapediaPageInfo
 
     # Determine the mode based on the template
@@ -68,7 +70,7 @@ def convert_negapediapageinfo_to_filled_content(post_info, filled_content, templ
 
     elif template == 'ranking':
         # Handle ranking mode, where multiple topics are ranked and listed
-        filled_content = replace_ranking_content(filled_content, post_info)
+        filled_content = replace_ranking_content(filled_content, post_info, language, posting_settings)
 
     # Replace placeholders for the general title
     filled_content = replace_main_title(filled_content, post_info, template)
@@ -79,7 +81,7 @@ def convert_negapediapageinfo_to_filled_content(post_info, filled_content, templ
     return filled_content
 
 
-def convert_pageinfo_to_filled_content(post_info, filled_content, template):
+def convert_pageinfo_to_filled_content(post_info, filled_content, template, posting_settings):
     filled_content = replace_title(filled_content, post_info, '{{title}}')
     filled_content = replace_description(filled_content, post_info)
     filled_content = replace_images(filled_content, (post_info.get('images', []) or []), '{{images}}')
@@ -188,14 +190,48 @@ def replace_topic_content(filled_content, topic, topic_number):
     return filled_content
 
 
-def replace_ranking_content(filled_content, post_info):
-    filled_content = replace_recent_conflict_levels_ranking(filled_content, post_info)
-    filled_content = replace_recent_polemic_levels_ranking(filled_content, post_info)
-    filled_content = replace_mean_conflict_levels_ranking(filled_content, post_info)
-    filled_content = replace_mean_polemic_levels_ranking(filled_content, post_info)
+def replace_ranking_content(filled_content, post_info, language, posting_settings):
+    filled_content = replace_ranking_field(filled_content, language, posting_settings)
+
+    if 'recent_conflict_levels' in posting_settings['ranking_fields']:
+        filled_content = replace_recent_conflict_levels_ranking(filled_content, post_info)
+    else:
+        filled_content = delete_div(filled_content, 'recent_conflict_levels_ranking')
+
+    if 'recent_polemic_levels' in posting_settings['ranking_fields']:
+        filled_content = replace_recent_polemic_levels_ranking(filled_content, post_info)
+    else:
+        filled_content = delete_div(filled_content, 'recent_polemic_levels_ranking')
+
+    if 'mean_conflict_level' in posting_settings['ranking_fields']:
+        filled_content = replace_mean_conflict_levels_ranking(filled_content, post_info)
+    else:
+        filled_content = delete_div(filled_content, 'mean_conflict_level_ranking')
+
+    if 'mean_polemic_level' in posting_settings['ranking_fields']:
+        filled_content = replace_mean_polemic_levels_ranking(filled_content, post_info)
+    else:
+        filled_content = delete_div(filled_content, 'mean_polemic_level_ranking')
+
     filled_content = replace_images(filled_content, (post_info[0].get('historical_conflict_comparison', []) or []) + (post_info[0].get('historical_polemic_comparison', []) or []), '{{comparison_images}}')
 
     return filled_content
+
+
+def replace_ranking_field(filled_content, language, posting_settings):
+    env_data = load_from_env()
+    translations_dictionary = env_data.get('translations_dictionary')
+
+    field_names = {
+        'recent_conflict_levels': translations_dictionary.get(language).get('recent_conflict_levels'),
+        'recent_polemic_levels': translations_dictionary.get(language).get('recent_polemic_levels'),
+        'mean_conflict_level': translations_dictionary.get(language).get('mean_conflict_level'),
+        'mean_polemic_level': translations_dictionary.get(language).get('mean_polemic_level'),
+    }
+
+    ranking_field_names = ', '.join([field_names.get(field, field) for field in posting_settings['ranking_fields']])
+
+    return filled_content.replace('{{ranking_field}}', str(ranking_field_names))
 
 
 def replace_recent_conflict_levels(filled_content, topic, topic_number):
@@ -256,6 +292,20 @@ def replace_mean_polemic_levels_ranking(filled_content, post_info):
         mean_polemic_levels_html += f'<p>{rank}. {topic.get("title", "Unknown Topic")}: {topic.get("mean_polemic_level", "N/A")}</p>'
 
     return filled_content.replace('{{mean_polemic_level_ranking}}', str(mean_polemic_levels_html))
+
+
+def delete_div(filled_content, div_id):
+    # Initialize BeautifulSoup with the filled content
+    soup = BeautifulSoup(filled_content, 'html.parser')
+
+    # Find the div with the specific ID
+    mean_polemic_div = soup.find(id=div_id)
+
+    if mean_polemic_div:
+        # If the div is found, delete it
+        mean_polemic_div.decompose()
+
+    return str(soup)
 
 
 def replace_words_that_matter(filled_content, topic, topic_number):

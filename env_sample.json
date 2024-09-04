@@ -24,5 +24,19 @@
       "number_of_polemic_awards_to_extract": 3,
       "number_of_social_jumps_to_extract": 3
     }
+  },
+  "translations_dictionary": {
+    "en": {
+        "recent_conflict_levels": "Recent Conflict Levels",
+        "recent_polemic_levels": "Recent Polemic Levels",
+        "mean_conflict_level": "Mean Conflict Level",
+        "mean_polemic_level": "Mean Polemic Level"
+    },
+    "it": {
+        "recent_conflict_levels": "Livello di Conflitto Recente",
+        "recent_polemic_levels": "Livello di Polemica Recente",
+        "mean_conflict_level": "Media Livelli di Conflitto",
+        "mean_polemic_level": "Media Livelli di Polemica"
+    }
   }
 }

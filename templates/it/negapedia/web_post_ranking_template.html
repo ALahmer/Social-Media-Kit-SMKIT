@@ -76,30 +76,38 @@
 
     <!-- Ranking Container -->
     <div class="ranking-container">
-        <h2>Classifica sul campo: {{ranking_field}}</h2>
+        <h2>Classifica sui campi: {{ranking_field}}</h2>
 
         <!-- Conflict Levels Ranking -->
-        <div class="section-title">Classifica Livello di Conflitto Recente</div>
-        <div class="ranking-list">
-            {{recent_conflict_levels_ranking}}
+        <div class="ranking-section-container" id="recent_conflict_levels_ranking">
+            <div class="section-title">Classifica Livello di Conflitto Recente</div>
+            <div class="ranking-list">
+                {{recent_conflict_levels_ranking}}
+            </div>
         </div>
 
         <!-- Polemic Levels Ranking -->
-        <div class="section-title">Classifica Livello di Polemica Recente</div>
-        <div class="ranking-list">
-            {{recent_polemic_levels_ranking}}
+        <div class="ranking-section-container" id="recent_polemic_levels_ranking">
+            <div class="section-title">Classifica Livello di Polemica Recente</div>
+            <div class="ranking-list">
+                {{recent_polemic_levels_ranking}}
+            </div>
         </div>
 
         <!-- Mean Conflict Level Ranking -->
-        <div class="section-title">Classifica Media Livelli di Conflitto</div>
-        <div class="ranking-list">
-            {{mean_conflict_level_ranking}}
+        <div class="ranking-section-container" id="mean_conflict_level_ranking">
+            <div class="section-title">Classifica Media Livelli di Conflitto</div>
+            <div class="ranking-list">
+                {{mean_conflict_level_ranking}}
+            </div>
         </div>
 
         <!-- Mean Polemic Level Ranking -->
-        <div class="section-title">Classifica Media Livelli di Polemica</div>
-        <div class="ranking-list">
-            {{mean_polemic_level_ranking}}
+        <div class="ranking-section-container" id="mean_polemic_level_ranking">
+            <div class="section-title">Classifica Media Livelli di Polemica</div>
+            <div class="ranking-list">
+                {{mean_polemic_level_ranking}}
+            </div>
         </div>
 
     </div>

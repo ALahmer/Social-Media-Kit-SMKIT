@@ -4,7 +4,7 @@ from utils.images_management import fetch_image_as_stream
 import re
 
 
-def post_on_twitter(post_info, template, language, module):
+def post_on_twitter(post_info, template, language, module, posting_settings):
     env_data = load_from_env()
     if not env_data or not all(k in env_data for k in ('twitter_api_key', 'twitter_api_secret_key', 'twitter_access_token', 'twitter_access_token_secret')):
         print("Twitter credentials not found. Please add them to env.json.")

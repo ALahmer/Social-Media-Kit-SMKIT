@@ -50,6 +50,13 @@ class NegapediaModule(BaseModule):
             if len(args.pages) < 2:
                 logging.error("The 'ranking' mode requires at least two URLs in the '--pages' argument.")
                 return
+            if len(args.ranking_fields) < 1:
+                logging.warning("The 'ranking' mode requires ranking field in the '--ranking_fields' argument. All ranking fields will be used for the ranking")
+                # Save ranking fields on which the ranking will be built, forcing all of them as no choice have been made
+                self.posting_settings['ranking_fields'] = ["recent_conflict_levels", "recent_polemic_levels", "mean_conflict_level", "mean_polemic_level"]
+            else:
+                # Save ranking fields on which the ranking will be built
+                self.posting_settings['ranking_fields'] = args.ranking_fields
 
         # Save extraction settings
         self.extraction_settings = {

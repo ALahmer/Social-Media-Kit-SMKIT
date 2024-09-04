@@ -6,7 +6,7 @@ def main():
     parser = argparse.ArgumentParser(description="Social Media Kit")
     parser.add_argument('--module', type=str, help='Specify the module (e.g., negapedia)')
     parser.add_argument('--pages', nargs='+', type=str, help='Specify the pages to post about')
-    parser.add_argument('--mode', type=str, choices=['comparison', 'summary'], help='Specify the mode to analise topics')
+    parser.add_argument('--mode', type=str, choices=['summary', 'comparison', 'ranking'], help='Specify the mode to analyse topics')
     parser.add_argument('--post_type', nargs='+', type=str, choices=['twitter', 'facebook', 'web'], help='Specify the type of post')
     parser.add_argument('--message', type=str, help='Specify a custom message for the post')
     parser.add_argument('--language', type=str, choices=['en', 'it'], default='en', help='Specify the language for the post')
@@ -18,20 +18,22 @@ def main():
     parser.add_argument('--number_of_conflict_awards_to_extract', type=int, help='Number of conflict awards to extract')
     parser.add_argument('--number_of_polemic_awards_to_extract', type=int, help='Number of polemic awards to extract')
     parser.add_argument('--number_of_social_jumps_to_extract', type=int, help='Number of social jumps to extract')
+    parser.add_argument('--ranking_fields', nargs='+', choices=['recent_conflict_levels', 'recent_polemic_levels', 'mean_conflict_level', 'mean_polemic_level'], help='Specify fields to use for ranking. If no choice is made all ranking fields will be used for the ranking')
 
     args = parser.parse_args()
 
     # args = {
     #     "module": "negapedia",
     #     # "module": None,
-    #     "mode": "comparison",
     #     # "mode": "summary",
+    #     # "mode": "comparison",
+    #     "mode": "ranking",
     #     "post_type": [
     #         "web",
     #         # "facebook",
     #         # "twitter",
     #                   ],
-    #     "message": "The hidden information behind the Wikipedia pages #Wikipedia #Negapedia",
+    #     "message": None,
     #     "language": 'en',
     #     # "pages": [
     #     #     "./virtual_local_server/var/www/negapedia/en/html/articles/Barack_Obama.html.zip",
@@ -43,9 +45,10 @@ def main():
     #     #     "./virtual_local_server/var/www/negapedia/it/html"
     #     # ],
     #     "pages": [
-    #         "http://it.negapedia.org/articles/Joe_Biden",
-    #         "http://it.negapedia.org/articles/Donald_Trump",
-    #         # "http://it.negapedia.org/articles/Barack_Obama",
+    #         "http://en.negapedia.org/articles/Joe_Biden",
+    #         "http://en.negapedia.org/articles/Donald_Trump",
+    #         "http://en.negapedia.org/articles/Barack_Obama",
+    #         "http://en.negapedia.org/articles/George_W._Bush",
     #         # "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/",
     #         # "https://www.ilpost.it/2024/08/18/governo-germania-automobili/",
     #         # "https://www.buzzfeed.com/sarahaspler/women-who-make-six-figures-are-sharing-their-jobs-1",
@@ -62,6 +65,12 @@ def main():
     #     "number_of_conflict_awards_to_extract": None,
     #     "number_of_polemic_awards_to_extract": None,
     #     "number_of_social_jumps_to_extract": None,
+    #     "ranking_fields": [
+    #         # "recent_conflict_levels",
+    #         "recent_polemic_levels",
+    #         # "mean_conflict_level",
+    #         "mean_polemic_level",
+    #     ]
     # }
     # args = argparse.Namespace(**args)
 

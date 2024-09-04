@@ -38,7 +38,7 @@ def refresh_access_token(facebook_app_id, facebook_app_secret, short_lived_token
         return None
 
 
-def post_on_facebook(post_info, template, language, module):
+def post_on_facebook(post_info, template, language, module, posting_settings):
     env_data = load_from_env()
     if not env_data or 'page_access_token' not in env_data:
         print("Access token not found. Please authenticate first.")

@@ -11,6 +11,7 @@ import requests
 
 class BaseModule(ABC):
     module = None
+    posting_settings = {}
 
     # Initialize a shared color manager for all modules
     color_manager = PlotColorManager()
@@ -105,10 +106,10 @@ class BaseModule(ABC):
                 # if not check_access_token():  # {{to_check}} if needed or not, it was only on negapedia module
                 #     start_flask_app()
                 #     input("Press Enter after completing authentication in the browser...")
-                post_on_facebook(post_info, mode, language, self.module)
+                post_on_facebook(post_info, mode, language, self.module, self.posting_settings)
             elif channel == 'twitter':
-                post_on_twitter(post_info, mode, language, self.module)
+                post_on_twitter(post_info, mode, language, self.module, self.posting_settings)
             elif channel == 'web':
-                post_on_web(post_info, mode, language, self.module)
+                post_on_web(post_info, mode, language, self.module, self.posting_settings)
             else:
                 print(f"Post type '{channel}' is not supported.")
