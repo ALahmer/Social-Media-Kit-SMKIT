@@ -1,6 +1,6 @@
 import tweepy
 from utils.env_management import load_from_env
-from utils.images_management import get_downloaded_image_path
+from utils.images_management import fetch_image_as_stream
 import re
 
 
@@ -58,6 +58,7 @@ def post_to_twitter(api, client, message, images):
         media_ids = []
         for image_info in images:
             try:
+                media = None
                 src = image_info.get('image')
                 width = image_info.get('image_width')
                 height = image_info.get('image_height')
@@ -65,9 +66,13 @@ def post_to_twitter(api, client, message, images):
                 location = image_info.get('location')
 
                 if location == "web":
-                    src = get_downloaded_image_path(src)
-                media = api.media_upload(src)
-                media_ids.append(media.media_id_string)
+                    image_stream = fetch_image_as_stream(src)   # {{to_test}}
+                    if image_stream:
+                        media = api.media_upload(filename="image.jpg", file=image_stream)
+                else:
+                    media = api.media_upload(src)
+                if media:
+                    media_ids.append(media.media_id_string)
             except tweepy.TweepyException as e:
                 print(f"An error occurred while uploading image {image_info}: {e}")
 

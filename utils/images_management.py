@@ -7,7 +7,7 @@ import cairosvg
 from utils.env_management import load_from_env
 
 
-def download_image(url):
+def fetch_image_as_stream(url):
     response = requests.get(url)
     if response.status_code == 200:
         return BytesIO(response.content)
@@ -20,8 +20,8 @@ def get_downloaded_image_path(image_path_src):
     env_data = load_from_env()
     posts_images_absolute_destination_path = env_data.get('posts_images_absolute_destination_path')
 
-    image_data = download_image(image_path_src)
-    with Image.open(image_data) as img:
+    image_stream = fetch_image_as_stream(image_path_src)
+    with Image.open(image_stream) as img:
         original_format = img.format.lower()
         timestamp = datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
         image_path_src = f"{posts_images_absolute_destination_path}temp_image_{timestamp}.{original_format}"

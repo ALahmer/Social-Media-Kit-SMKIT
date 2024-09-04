@@ -2,7 +2,6 @@ import facebook
 from datetime import datetime
 import requests
 from utils.env_management import load_from_env, save_to_env
-from utils.images_management import get_downloaded_image_path
 import re
 
 
@@ -102,9 +101,7 @@ def post_to_facebook(graph, message, images):
                 location = image_info.get('location')
 
                 if location == "web":
-                    src = get_downloaded_image_path(src)
-                with open(src, 'rb') as image:
-                    media = graph.put_photo(image=image, published=False)
+                    media = graph.request(path='/me/photos', args={'url': src, 'published': False}, method='POST')
                     media_ids.append(media['id'])
             except facebook.GraphAPIError as e:
                 print(f"An error occurred while uploading image {image_info}: {e}")
