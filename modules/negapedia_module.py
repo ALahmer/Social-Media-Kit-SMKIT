@@ -28,6 +28,7 @@ class NegapediaModule(BaseModule):
         Args:
             args (Any): The arguments passed to the module.
         """
+        # Check for required arguments
         if not args.pages or not args.post_type or not args.mode or not args.language:
             raise ValueError("Pages, Post Type, Mode and Language are required for negapedia module posting.")
 
@@ -41,7 +42,14 @@ class NegapediaModule(BaseModule):
         # Check if the mode is 'comparison' and validate the number of pages
         elif args.mode == 'comparison':
             if len(args.pages) != 2:
-                raise ValueError("The 'comparison' mode requires exactly two URLs in the '--pages' argument.")  # {{to_fix}} just print the error and return otherwise it will print the track trace on console
+                logging.error("The 'comparison' mode requires exactly two URLs in the '--pages' argument.")
+                return
+
+        # Check if the mode is 'ranking' and validate the minimum number of pages
+        elif args.mode == 'ranking':
+            if len(args.pages) < 2:
+                logging.error("The 'ranking' mode requires at least two URLs in the '--pages' argument.")
+                return
 
         # Save extraction settings
         self.extraction_settings = {
@@ -82,7 +90,7 @@ class NegapediaModule(BaseModule):
         Args:
             urls (List[str]): The list of URLs to process.
             post_type (List[str]): The types of posts to create (e.g., 'facebook', 'twitter', 'web').
-            mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
+            mode (str): The mode to analyze topics (e.g., 'summary', 'comparison', 'ranking').
             language (str): The language in which to generate the posts.
             remove_suffix (Optional[bool], optional): Flag indicating whether to remove .html or .htm suffixes from URLs.
             base_directory (Optional[str], optional): The base directory in the filesystem for local processing.
@@ -103,25 +111,27 @@ class NegapediaModule(BaseModule):
         Args:
             urls (List[str]): The list of URLs being processed.
             message (Optional[str]): The message to force into the post.
-            mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
+            mode (str): The mode to analyze topics (e.g., 'summary', 'comparison', 'ranking').
 
         Returns:
             List[NegapediaPageInfo]: A list of dictionaries containing extracted information.
         """
         if mode == 'summary':
             # As summary mode is meant to work only on one page, we take just the first URL passed
-            negapedia_page_info = self.build_summary_mode_post_info(urls, message)
+            negapedia_page_info = self.build_single_page_post_info(urls, message)
             negapedia_pages_info = [negapedia_page_info]
         elif mode == 'comparison':
-            negapedia_pages_info = self.build_comparison_mode_post_info(urls, message)
+            negapedia_pages_info = self.build_multiple_pages_post_info(urls, message)
+        elif mode == 'ranking':
+            negapedia_pages_info = self.build_multiple_pages_post_info(urls, message)
         else:
-            error_message = f"Unsupported mode '{mode}' provided. Accepted modes are 'summary' or 'comparison'."
+            error_message = f"Unsupported mode '{mode}' provided. Accepted modes are 'summary', 'comparison' or 'ranking'."
             logging.error(error_message)
             raise ValueError(error_message)
 
         return negapedia_pages_info
 
-    def build_summary_mode_post_info(self, urls: List[str], message: Optional[str]) -> NegapediaPageInfo:
+    def build_single_page_post_info(self, urls: List[str], message: Optional[str]) -> NegapediaPageInfo:
         """
         Builds the post information in summary mode for the given URL.
 
@@ -151,8 +161,10 @@ class NegapediaModule(BaseModule):
             'historical_polemic': [],
             'historical_conflict_comparison': [],
             'historical_polemic_comparison': [],
-            'recent_conflict_levels': [],
-            'recent_polemic_levels': [],
+            'recent_conflict_levels': None,
+            'recent_polemic_levels': None,
+            'mean_conflict_level': None,
+            'mean_polemic_level': None,
             'words_that_matter': [],
             'conflict_awards': {},
             'polemic_awards': {},
@@ -177,6 +189,8 @@ class NegapediaModule(BaseModule):
             historical_polemic_levels = self.extract_historical_plotted_data('polemic', negaranks_dict, plot_color, url, title)
             recent_conflict_levels = self.extract_recent_data('conflict', negaranks_dict, url, title)
             recent_polemic_levels = self.extract_recent_data('polemic', negaranks_dict, url, title)
+            mean_conflict_level = self.extract_mean_data_level('conflict', negaranks_dict, url, title)
+            mean_polemic_level = self.extract_mean_data_level('polemic', negaranks_dict, url, title)
             words_that_matter = self.extract_words_that_matter(soup, url, title, number_of_words_that_matter_to_extract)
             conflict_awards = self.extract_data_awards('conflict', negaranks_dict, url, title, number_of_conflict_awards_to_extract)
             polemic_awards = self.extract_data_awards('polemic', negaranks_dict, url, title, number_of_polemic_awards_to_extract)
@@ -195,6 +209,8 @@ class NegapediaModule(BaseModule):
                 'historical_polemic_comparison': [],
                 'recent_conflict_levels': recent_conflict_levels,
                 'recent_polemic_levels': recent_polemic_levels,
+                'mean_conflict_level': mean_conflict_level,
+                'mean_polemic_level': mean_polemic_level,
                 'words_that_matter': words_that_matter,
                 'conflict_awards': conflict_awards,
                 'polemic_awards': polemic_awards,
@@ -207,9 +223,9 @@ class NegapediaModule(BaseModule):
 
         return negapedia_page_info
 
-    def build_comparison_mode_post_info(self, urls: List[str], message: Optional[str]) -> List[NegapediaPageInfo]:
+    def build_multiple_pages_post_info(self, urls: List[str], message: Optional[str]) -> List[NegapediaPageInfo]:
         """
-        Builds the post information in comparison mode for the given URLs.
+        Builds the post information in comparison/ranking mode for the given URLs.
 
         Args:
             urls (List[str]): The list of URLs being processed.
@@ -229,7 +245,7 @@ class NegapediaModule(BaseModule):
         compact_messages = []  # List to accumulate compact messages
         negapedia_pages_info = []
 
-        # Initialize arrays to hold data for comparison plotting
+        # Initialize arrays to hold data for comparison/ranking plotting
         negaranks_for_comparison = []
         urls_for_comparison = []
         titles_for_comparison = []
@@ -254,6 +270,8 @@ class NegapediaModule(BaseModule):
                 historical_polemic_levels = self.extract_historical_plotted_data('polemic', negaranks_dict, plot_color, url, title)
                 recent_conflict_levels = self.extract_recent_data('conflict', negaranks_dict, url, title)
                 recent_polemic_levels = self.extract_recent_data('polemic', negaranks_dict, url, title)
+                mean_conflict_level = self.extract_mean_data_level('conflict', negaranks_dict, url, title)
+                mean_polemic_level = self.extract_mean_data_level('polemic', negaranks_dict, url, title)
                 words_that_matter = self.extract_words_that_matter(soup, url, title, number_of_words_that_matter_to_extract)
                 conflict_awards = self.extract_data_awards('conflict', negaranks_dict, url, title, number_of_conflict_awards_to_extract)
                 polemic_awards = self.extract_data_awards('polemic', negaranks_dict, url, title, number_of_polemic_awards_to_extract)
@@ -270,6 +288,8 @@ class NegapediaModule(BaseModule):
                     'historical_polemic_comparison': [],
                     'recent_conflict_levels': recent_conflict_levels,
                     'recent_polemic_levels': recent_polemic_levels,
+                    'mean_conflict_level': mean_conflict_level,
+                    'mean_polemic_level': mean_polemic_level,
                     'words_that_matter': words_that_matter,
                     'conflict_awards': conflict_awards,
                     'polemic_awards': polemic_awards,
@@ -513,14 +533,17 @@ class NegapediaModule(BaseModule):
         """
         try:
             # Filter the NEGARANKS data for the current year and the specified type
-            recent_data = [
+            filtered_data = [
                 entry for entry in negaranks_dict
-                if entry['type'] == type_check and entry['category'] == 'all' and entry['period'] == str(datetime.now().year)
+                if entry['type'] == type_check and entry['category'] == 'all' and entry['period'] != 'all'
             ]
+
+            # Find the entry with the highest numeric period
+            recent_data = max(filtered_data, key=lambda x: int(x['period']))
 
             if recent_data:
                 # Extract the 'normalized_value' from the recent data
-                normalized_value = recent_data[0]['normalized_value']
+                normalized_value = recent_data['normalized_value']
                 logging.info(f"Extracted recent {type_check} level: {normalized_value} for {title} from {url}")
                 return str(normalized_value)
             else:
@@ -529,6 +552,42 @@ class NegapediaModule(BaseModule):
 
         except Exception as e:
             logging.error(f"Error during recent {type_check} extraction for {title} from {url}: {e}")
+            return None
+
+    @staticmethod
+    def extract_mean_data_level(type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], url: str, title: str) -> Optional[str]:
+        """
+        Calculates the mean level (conflict or polemic) from the NEGARANKS dictionary using the 'absolute_value' field.
+
+        Args:
+            type_check (str): The type of data to calculate the mean for ('conflict' or 'polemic').
+            negaranks_dict (list): The list of NEGARANKS data entries.
+            url (str): The URL of the page.
+            title (str): The title of the topic being analyzed.
+
+        Returns:
+            Optional[str]: The calculated mean level or None if not found.
+        """
+        try:
+            # Filter the NEGARANKS data for all periods and the specified type
+            filtered_data = [
+                entry for entry in negaranks_dict
+                if entry['type'] == type_check and entry['category'] == 'all' and entry['period'] != 'all'
+            ]
+
+            if not filtered_data:
+                logging.warning(f"No {type_check} data found for {title} across any year from {url}")
+                return None
+
+            # Calculate the mean of 'absolute_value' for the filtered entries
+            total_value = sum(float(entry['absolute_value']) for entry in filtered_data)
+            mean_value = total_value / len(filtered_data)
+
+            logging.info(f"Calculated mean {type_check} level: {mean_value:.2f} for {title} from {url}")
+            return f"{mean_value:.2f}"  # Return as a string formatted to two decimal places
+
+        except Exception as e:
+            logging.error(f"Error during mean {type_check} extraction for {title} from {url}: {e}")
             return None
 
     @staticmethod

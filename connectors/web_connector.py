@@ -51,23 +51,30 @@ def load_template(template, language, module):
 
 def convert_negapediapageinfo_to_filled_content(post_info, filled_content, template):
     # Handle NegapediaPageInfo
-    topic1 = post_info[0]
-    topic2 = post_info[1] if len(post_info) > 1 else None
 
-    # Process first topic
-    filled_content = replace_topic_content(filled_content, topic1, '1')
+    # Determine the mode based on the template
+    if template == 'summary':
+        # Process first topic for summary mode
+        topic1 = post_info[0]
+        filled_content = replace_topic_content(filled_content, topic1, '1')
 
-    # Process second topic if it exists
-    if topic2:
+    elif template == 'comparison':
+        topic1 = post_info[0]
+        topic2 = post_info[1]
+
+        # Process both topics for comparison mode
+        filled_content = replace_topic_content(filled_content, topic1, '1')
         filled_content = replace_topic_content(filled_content, topic2, '2')
-    else:
-        filled_content = clear_second_topic_placeholders(filled_content)    # {{to_check}} do we really need it?
+
+    elif template == 'ranking':
+        # Handle ranking mode, where multiple topics are ranked and listed
+        filled_content = replace_ranking_content(filled_content, post_info)
 
     # Replace placeholders for the general title
-    filled_content = replace_main_title(filled_content, topic1, topic2, template)
+    filled_content = replace_main_title(filled_content, post_info, template)
 
     # Replace placeholders for the page description
-    filled_content = replace_description(filled_content, topic1)
+    filled_content = replace_description(filled_content, post_info[0])
 
     return filled_content
 
@@ -181,16 +188,74 @@ def replace_topic_content(filled_content, topic, topic_number):
     return filled_content
 
 
+def replace_ranking_content(filled_content, post_info):
+    filled_content = replace_recent_conflict_levels_ranking(filled_content, post_info)
+    filled_content = replace_recent_polemic_levels_ranking(filled_content, post_info)
+    filled_content = replace_mean_conflict_levels_ranking(filled_content, post_info)
+    filled_content = replace_mean_polemic_levels_ranking(filled_content, post_info)
+    filled_content = replace_images(filled_content, (post_info[0].get('historical_conflict_comparison', []) or []) + (post_info[0].get('historical_polemic_comparison', []) or []), '{{comparison_images}}')
+
+    return filled_content
+
+
 def replace_recent_conflict_levels(filled_content, topic, topic_number):
-    conflict_levels = ', '.join([topic.get('recent_conflict_levels', [])])
+    conflict_levels = ', '.join([topic.get('recent_conflict_levels', '')])
 
     return filled_content.replace(f'{{{{conflict_levels_{topic_number}}}}}', str(conflict_levels))
 
 
+def replace_recent_conflict_levels_ranking(filled_content, post_info):
+    conflict_levels_html = ''
+
+    # Sort topics by their recent conflict levels (descending)
+    sorted_by_conflict = sorted(post_info, key=lambda post_info_topic: int(post_info_topic.get('recent_conflict_levels', 0)), reverse=True)
+
+    for rank, topic in enumerate(sorted_by_conflict, start=1):
+        conflict_levels_html += f'<p>{rank}. {topic.get("title", "Unknown Topic")}: {topic.get("recent_conflict_levels", "N/A")}</p>'
+
+    return filled_content.replace('{{recent_conflict_levels_ranking}}', str(conflict_levels_html))
+
+
+def replace_mean_conflict_levels_ranking(filled_content, post_info):
+    mean_conflict_levels_html = ''
+
+    # Sort topics by their recent conflict levels (descending)
+    sorted_by_mean_conflict = sorted(post_info, key=lambda post_info_topic: float(post_info_topic.get('mean_conflict_level', 0)), reverse=True)
+
+    for rank, topic in enumerate(sorted_by_mean_conflict, start=1):
+        mean_conflict_levels_html += f'<p>{rank}. {topic.get("title", "Unknown Topic")}: {topic.get("mean_conflict_level", "N/A")}</p>'
+
+    return filled_content.replace('{{mean_conflict_level_ranking}}', str(mean_conflict_levels_html))
+
+
 def replace_recent_polemic_levels(filled_content, topic, topic_number):
-    polemic_levels = ', '.join([topic.get('recent_polemic_levels', [])])
+    polemic_levels = ', '.join([topic.get('recent_polemic_levels', '')])
 
     return filled_content.replace(f'{{{{polemic_levels_{topic_number}}}}}', str(polemic_levels))
+
+
+def replace_recent_polemic_levels_ranking(filled_content, post_info):
+    polemic_levels_html = ''
+
+    # Sort topics by their recent polemic levels (descending)
+    sorted_by_polemic = sorted(post_info, key=lambda post_info_topic: int(post_info_topic.get('recent_polemic_levels', 0)), reverse=True)
+
+    for rank, topic in enumerate(sorted_by_polemic, start=1):
+        polemic_levels_html += f'<p>{rank}. {topic.get("title", "Unknown Topic")}: {topic.get("recent_polemic_levels", "N/A")}</p>'
+
+    return filled_content.replace('{{recent_polemic_levels_ranking}}', str(polemic_levels_html))
+
+
+def replace_mean_polemic_levels_ranking(filled_content, post_info):
+    mean_polemic_levels_html = ''
+
+    # Sort topics by their recent polemic levels (descending)
+    sorted_by_mean_polemic = sorted(post_info, key=lambda post_info_topic: float(post_info_topic.get('mean_polemic_level', 0)), reverse=True)
+
+    for rank, topic in enumerate(sorted_by_mean_polemic, start=1):
+        mean_polemic_levels_html += f'<p>{rank}. {topic.get("title", "Unknown Topic")}: {topic.get("mean_polemic_level", "N/A")}</p>'
+
+    return filled_content.replace('{{mean_polemic_level_ranking}}', str(mean_polemic_levels_html))
 
 
 def replace_words_that_matter(filled_content, topic, topic_number):
@@ -235,11 +300,16 @@ def clear_second_topic_placeholders(filled_content):
     return filled_content
 
 
-def replace_main_title(filled_content, topic1, topic2, template):
-    if template == 'comparison':
-        title = f"Comparison between {topic1.get('title', 'Topic 1')} and {topic2.get('title', 'Topic 2')} Negapedia pages"
+def replace_main_title(filled_content, topics, template):
+    if template == 'summary':
+        title = f"Summary for {topics[0].get('title', 'Topic 1')} Negapedia page"
+    elif template == 'comparison':
+        title = f"Comparison between {topics[0].get('title', 'Topic 1')} and {topics[1].get('title', 'Topic 2')} Negapedia pages"
+    elif template == 'ranking':
+        topic_titles = [topic.get('title', f'Topic {i + 1}') for i, topic in enumerate(topics)]
+        title = f"Ranking comparison between Negapedia topics pages: {', '.join(topic_titles)}"
     else:
-        title = f"Summary for {topic1.get('title', 'Topic 1')} Negapedia page"
+        title = "Negapedia Page Analysis"
 
     return filled_content.replace('{{title}}', str(title))
 

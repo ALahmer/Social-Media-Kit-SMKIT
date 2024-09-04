@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Dict, Union
 from utils.input_validation_management import get_input_parameter_web_urls
 from bs4 import BeautifulSoup
 from datetime import datetime
+import logging
 
 
 class GenericModule(BaseModule):
@@ -16,9 +17,16 @@ class GenericModule(BaseModule):
         Args:
             args (Any): The input arguments containing pages, post type, mode, language, and other options.
         """
+        # Check for required arguments
         if not args.pages or not args.post_type or not args.mode or not args.language:
             raise ValueError("Pages, Post Type, Mode and Language are required for generic module posting.")
         print(f"Handling generic module for Pages {args.pages}")
+
+        # Check for invalid mode
+        if args.mode != 'summary':
+            logging.error(f"Error: Mode '{args.mode}' is not accepted for generic module.")
+            return
+
         self.process_pages(
             urls=args.pages,
             post_type=args.post_type,
