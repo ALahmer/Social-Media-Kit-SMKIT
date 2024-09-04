@@ -1,0 +1,17 @@
+Title of the post: {{title}}
+
+{{description}}
+
+Ranking on Fields: {{ranking_field}}
+
+Recent Conflict Levels Ranking: {{recent_conflict_levels_ranking}}
+
+Recent Polemic Levels Ranking: {{recent_polemic_levels_ranking}}
+
+Mean Conflict Level Ranking: {{mean_conflict_level_ranking}}
+
+Mean Polemic Level Ranking: {{mean_polemic_level_ranking}}
+
+---
+
+Media's Alt: {{images_alt}}

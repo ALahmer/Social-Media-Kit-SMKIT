@@ -70,17 +70,21 @@ def post_on_facebook(post_info, template, language, module, posting_settings):
     filled_content = template_content
 
     if module == 'negapedia':
-        topic1 = post_info[0]
-        topic2 = post_info[1] if len(post_info) > 1 else None
 
         if template == 'summary':
+            topic1 = post_info[0]
             filled_content = convert_negapediapageinfo_to_summary_filled_content(topic1, filled_content, template)
             images = (topic1.get('historical_conflict', []) or []) + (topic1.get('historical_polemic', []) or [])
         elif template == 'comparison':
+            topic1 = post_info[0]
+            topic2 = post_info[1]
             filled_content = convert_negapediapageinfo_to_comparison_filled_content(topic1, topic2, filled_content, template)
             images = (topic1.get('historical_conflict_comparison', []) or []) + (topic1.get('historical_polemic_comparison', []) or []) +\
                      (topic1.get('historical_conflict', []) or []) + (topic1.get('historical_polemic', []) or []) +\
                      (topic2.get('historical_conflict', []) or []) + (topic2.get('historical_polemic', []) or [])
+        elif template == 'ranking':
+            filled_content = convert_negapediapageinfo_to_ranking_filled_content(post_info, filled_content, template, language, posting_settings)
+            images = (post_info[0].get('historical_conflict_comparison', []) or []) + (post_info[0].get('historical_polemic_comparison', []) or [])
     else:
         filled_content = convert_pageinfo_to_filled_content(post_info, filled_content)
         images = post_info.get('images', []) or []
@@ -103,6 +107,10 @@ def post_to_facebook(graph, message, images):
                 if location == "web":
                     media = graph.request(path='/me/photos', args={'url': src, 'published': False}, method='POST')
                     media_ids.append(media['id'])
+                else:
+                    with open(src, 'rb') as image:
+                        media = graph.put_photo(image=image, published=False)
+                        media_ids.append(media['id'])
             except facebook.GraphAPIError as e:
                 print(f"An error occurred while uploading image {image_info}: {e}")
 
@@ -154,7 +162,7 @@ def convert_pageinfo_to_filled_content(post_info, filled_content):
 
 
 def convert_negapediapageinfo_to_summary_filled_content(post_info, filled_content, template):
-    filled_content = replace_negapedia_template_title(filled_content, post_info, None, template, '{{title}}')
+    filled_content = replace_negapedia_template_title(filled_content, [post_info], template, '{{title}}')
     filled_content = replace_description(filled_content, post_info, '{{description}}')
     filled_content = replace_recent_conflict_levels(filled_content, post_info, '{{recent_conflict_levels}}')
     filled_content = replace_recent_polemic_levels(filled_content, post_info, '{{recent_polemic_levels}}')
@@ -172,7 +180,7 @@ def convert_negapediapageinfo_to_summary_filled_content(post_info, filled_conten
 
 def convert_negapediapageinfo_to_comparison_filled_content(topic1_post_info, topic2_post_info, filled_content, template):
     # Replace the titles
-    filled_content = replace_negapedia_template_title(filled_content, topic1_post_info, topic2_post_info, template, '{{title}}')
+    filled_content = replace_negapedia_template_title(filled_content, [topic1_post_info, topic2_post_info], template, '{{title}}')
     filled_content = replace_topics_titles(filled_content, topic1_post_info, '{{topic1_title}}')
     filled_content = replace_topics_titles(filled_content, topic2_post_info, '{{topic2_title}}')
 
@@ -215,6 +223,25 @@ def convert_negapediapageinfo_to_comparison_filled_content(topic1_post_info, top
     return filled_content
 
 
+def convert_negapediapageinfo_to_ranking_filled_content(topics, filled_content, template, language, posting_settings):
+    filled_content = replace_negapedia_template_title(filled_content, topics, template, '{{title}}')
+    filled_content = replace_description(filled_content, topics[0], '{{description}}')
+    filled_content = replace_ranking_field(filled_content, language, posting_settings, '{{ranking_field}}')
+    filled_content = replace_recent_conflict_levels_ranking(filled_content, topics, posting_settings, '{{recent_conflict_levels_ranking}}')
+    filled_content = replace_recent_polemic_levels_ranking(filled_content, topics, posting_settings, '{{recent_polemic_levels_ranking}}')
+    filled_content = replace_mean_conflict_level_ranking(filled_content, topics, posting_settings, '{{mean_conflict_level_ranking}}')
+    filled_content = replace_mean_polemic_level_ranking(filled_content, topics, posting_settings, '{{mean_polemic_level_ranking}}')
+
+    # Replace images alt for both topics
+    filled_content = replace_images_alt(
+        filled_content,
+        (topics[0].get('historical_conflict_comparison', []) or []) + (topics[0].get('historical_polemic_comparison', []) or []),
+        '{{images_alt}}'
+    )
+
+    return filled_content
+
+
 def replace_title(filled_content, post_info, template_variable_to_fill):
     title = post_info.get('title') or (post_info.get('urls', [None])[0]) or None
 
@@ -225,11 +252,16 @@ def replace_title(filled_content, post_info, template_variable_to_fill):
         return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
 
 
-def replace_negapedia_template_title(filled_content, topic1, topic2, template, template_variable_to_fill):
-    if template == 'comparison':
-        title = f"Comparison between {topic1.get('title', 'Topic 1')} and {topic2.get('title', 'Topic 2')} Negapedia pages"
+def replace_negapedia_template_title(filled_content, topics, template, template_variable_to_fill):
+    if template == 'summary':
+        title = f"\nSummary for {topics[0].get('title', 'Topic 1')} Negapedia page"
+    elif template == 'comparison':
+        title = f"\nComparison between {topics[0].get('title', 'Topic 1')} and {topics[1].get('title', 'Topic 2')} Negapedia pages"
+    elif template == 'ranking':
+        topic_titles = [topic.get('title', f'Topic {i + 1}') for i, topic in enumerate(topics)]
+        title = f"\nRanking comparison between Negapedia topics pages: {', '.join(topic_titles)}"
     else:
-        title = f"Summary for {topic1.get('title', 'Topic 1')} Negapedia page"
+        title = "Negapedia Page Analysis"
 
     if title:
         return filled_content.replace(template_variable_to_fill, str(title))
@@ -384,4 +416,88 @@ def replace_social_jumps(filled_content, post_info, template_variable_to_fill):
         return filled_content.replace(template_variable_to_fill, str(social_jumps))
     else:
         # Remove the line if there are no social jumps
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
+
+
+def replace_ranking_field(filled_content, language, posting_settings, template_variable_to_fill):
+    env_data = load_from_env()
+    translations_dictionary = env_data.get('translations_dictionary')
+
+    field_names = {
+        'recent_conflict_levels': translations_dictionary.get(language).get('recent_conflict_levels'),
+        'recent_polemic_levels': translations_dictionary.get(language).get('recent_polemic_levels'),
+        'mean_conflict_level': translations_dictionary.get(language).get('mean_conflict_level'),
+        'mean_polemic_level': translations_dictionary.get(language).get('mean_polemic_level'),
+    }
+
+    ranking_field_names = ', '.join([field_names.get(field, field) for field in posting_settings['ranking_fields']])
+
+    if ranking_field_names.strip():
+        return filled_content.replace(template_variable_to_fill, str(ranking_field_names))
+    else:
+        # Remove the line if there are no conflict levels
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
+
+
+def replace_recent_conflict_levels_ranking(filled_content, post_info, posting_settings, template_variable_to_fill):
+    conflict_levels_ranking = ''
+
+    # Sort topics by their recent conflict levels (descending)
+    sorted_by_conflict = sorted(post_info, key=lambda post_info_topic: int(post_info_topic.get('recent_conflict_levels', 0)), reverse=True)
+
+    for rank, topic in enumerate(sorted_by_conflict, start=1):
+        conflict_levels_ranking += f'\n{rank}. {topic.get("title", "Unknown Topic")}: {topic.get("recent_conflict_levels", "N/A")}'
+
+    if conflict_levels_ranking.strip() and 'recent_conflict_levels' in posting_settings['ranking_fields']:
+        return filled_content.replace(template_variable_to_fill, str(conflict_levels_ranking))
+    else:
+        # Remove the line if there are no conflict levels
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
+
+
+def replace_recent_polemic_levels_ranking(filled_content, post_info, posting_settings, template_variable_to_fill):
+    polemic_levels_ranking = ''
+
+    # Sort topics by their recent polemic levels (descending)
+    sorted_by_polemic = sorted(post_info, key=lambda post_info_topic: int(post_info_topic.get('recent_polemic_levels', 0)), reverse=True)
+
+    for rank, topic in enumerate(sorted_by_polemic, start=1):
+        polemic_levels_ranking += f'\n{rank}. {topic.get("title", "Unknown Topic")}: {topic.get("recent_polemic_levels", "N/A")}'
+
+    if polemic_levels_ranking.strip() and 'recent_polemic_levels' in posting_settings['ranking_fields']:
+        return filled_content.replace(template_variable_to_fill, str(polemic_levels_ranking))
+    else:
+        # Remove the line if there are no polemic levels
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
+
+
+def replace_mean_conflict_level_ranking(filled_content, post_info, posting_settings, template_variable_to_fill):
+    mean_conflict_levels_ranking = ''
+
+    # Sort topics by their recent conflict levels (descending)
+    sorted_by_mean_conflict = sorted(post_info, key=lambda post_info_topic: float(post_info_topic.get('mean_conflict_level', 0)), reverse=True)
+
+    for rank, topic in enumerate(sorted_by_mean_conflict, start=1):
+        mean_conflict_levels_ranking += f'\n{rank}. {topic.get("title", "Unknown Topic")}: {topic.get("mean_conflict_level", "N/A")}'
+
+    if mean_conflict_levels_ranking.strip() and 'mean_conflict_level' in posting_settings['ranking_fields']:
+        return filled_content.replace(template_variable_to_fill, str(mean_conflict_levels_ranking))
+    else:
+        # Remove the line if there are no mean conflict levels
+        return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
+
+
+def replace_mean_polemic_level_ranking(filled_content, post_info, posting_settings, template_variable_to_fill):
+    mean_polemic_levels_ranking = ''
+
+    # Sort topics by their recent polemic levels (descending)
+    sorted_by_polemic = sorted(post_info, key=lambda post_info_topic: int(post_info_topic.get('recent_polemic_levels', 0)), reverse=True)
+
+    for rank, topic in enumerate(sorted_by_polemic, start=1):
+        mean_polemic_levels_ranking += f'\n{rank}. {topic.get("title", "Unknown Topic")}: {topic.get("recent_polemic_levels", "N/A")}'
+
+    if mean_polemic_levels_ranking.strip() and 'mean_polemic_level' in posting_settings['ranking_fields']:
+        return filled_content.replace(template_variable_to_fill, str(mean_polemic_levels_ranking))
+    else:
+        # Remove the line if there are no mean conflict levels
         return re.sub(rf'^.*{re.escape(template_variable_to_fill)}.*\n?', '', filled_content, flags=re.MULTILINE)
