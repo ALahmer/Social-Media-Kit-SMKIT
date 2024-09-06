@@ -10,9 +10,9 @@ def main():
 
     parser = argparse.ArgumentParser(description="Social Media Kit")
     parser.add_argument('--module', type=str, help='Specify the module (e.g., negapedia)')
-    parser.add_argument('--pages', nargs='+', type=str, help='Specify the pages to post about')
-    parser.add_argument('--mode', type=str, choices=['summary', 'comparison', 'ranking'], help='Specify the mode to analyse topics')
-    parser.add_argument('--post_type', nargs='+', type=str, choices=['twitter', 'facebook', 'web'], help='Specify the type of post')
+    parser.add_argument('--pages', nargs='+', type=str, help='Specify the pages to post about', required=True)
+    parser.add_argument('--mode', type=str, choices=['summary', 'comparison', 'ranking'], help='Specify the mode to analyse topics', required=True)
+    parser.add_argument('--post_type', nargs='+', type=str, choices=['twitter', 'facebook', 'web'], help='Specify the type of post', required=True)
     parser.add_argument('--message', type=str, help='Specify a custom message for the post')
     parser.add_argument('--language', type=str, choices=['en', 'it'], default='en', help='Specify the language for the post')
     parser.add_argument('--minimum_article_modified_date', type=str, help='Specify the minimum article modified date for filtering pages (YYYY-MM-DD)')

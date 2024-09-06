@@ -6,8 +6,6 @@
   "twitter_api_secret_key": "",
   "twitter_access_token": "",
   "twitter_access_token_secret": "",
-  "twitter_api_key_OAuth_2_0": "",
-  "twitter_api_secret_key_OAuth_2_0": "",
   "web_posts_absolute_destination_path": "/var/www/negapedia/en/html/smkitwebpages/",
   "posts_images_absolute_destination_path": "/var/www/negapedia/images/",
   "modules": {
