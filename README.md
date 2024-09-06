@@ -22,13 +22,12 @@ git clone https://github.com/ALahmer/Social-Media-Kit-SMKIT.git
 cd Social-Media-Kit-SMKIT
 pip install -r requirements.txt
 ```
-Ensure you have Python installed (version 3.6 or higher).
 
 ---
 
 ## Requirements
 
-Ensure you have Python installed (version 3.6 or higher) and install the following dependencies:
+Ensure you have Python installed (***version 3.6 or higher***) and install the following dependencies:
 
 ```bash
     requests~=2.31.0
