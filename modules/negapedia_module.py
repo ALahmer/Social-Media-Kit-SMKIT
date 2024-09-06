@@ -10,7 +10,7 @@ from datetime import datetime
 import logging
 import re
 import json
-import random
+import sys
 
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -30,7 +30,8 @@ class NegapediaModule(BaseModule):
         """
         # Check for required arguments
         if not args.pages or not args.post_type or not args.mode or not args.language:
-            raise ValueError("Pages, Post Type, Mode and Language are required for negapedia module posting.")
+            logging.error("Pages, Post Type, Mode and Language are required for negapedia module posting.")
+            sys.exit(1)
 
         # Check if the mode is 'summary' and warn if more than one page is provided
         if args.mode == 'summary':
@@ -132,9 +133,8 @@ class NegapediaModule(BaseModule):
         elif mode == 'ranking':
             negapedia_pages_info = self.build_multiple_pages_post_info(urls, message)
         else:
-            error_message = f"Unsupported mode '{mode}' provided. Accepted modes are 'summary', 'comparison' or 'ranking'."
-            logging.error(error_message)
-            raise ValueError(error_message)
+            logging.error(f"Unsupported mode '{mode}' provided. Accepted modes are 'summary', 'comparison' or 'ranking'.")
+            sys.exit(1)
 
         return negapedia_pages_info
 
@@ -481,7 +481,6 @@ class NegapediaModule(BaseModule):
         years_to_plot = years
         values_to_plot = values
         plot_label = f"Historical {type_check.capitalize()} Levels for {title}"
-        # Select a random color from the color palette
         plt.plot(years_to_plot, values_to_plot, label=plot_label, color=plot_color, marker="o", linestyle='-')
 
         # Add labels and title

@@ -2,6 +2,7 @@ import os
 import filetype
 from utils.env_management import load_from_env
 import logging
+import sys
 
 env_data = load_from_env()
 
@@ -27,7 +28,8 @@ def process_input(input_path, module, args_remove_suffix, args_base_directory=No
         base_url = env_data.get('modules').get(f'{module}').get('website_base_url')
 
     if not base_dir or not base_url:
-        raise ValueError("Base directory or base URL is not defined in the environment data.")
+        logging.error("Base directory or base URL is not defined in the environment data.")
+        sys.exit(1)
 
     if is_url(input_path):
         return [input_path]
@@ -39,7 +41,8 @@ def process_input(input_path, module, args_remove_suffix, args_base_directory=No
         logging.info(f"Processing directory: {input_path}")
         return process_directory(input_path, args_remove_suffix, base_dir, base_url)
 
-    raise ValueError(f"Invalid input path provided: {input_path}")
+    logging.error(f"Invalid input path provided: {input_path}")
+    sys.exit(1)
 
 
 def is_url(path):
@@ -81,7 +84,8 @@ def map_local_path_to_url(local_path, base_dir, base_url):
     Maps a local file path to a corresponding web URL.
     """
     if not local_path.startswith(base_dir):
-        raise ValueError(f"Local path {local_path} does not match the base directory {base_dir}.")
+        logging.error(f"Local path {local_path} does not match the base directory {base_dir}.")
+        sys.exit(1)
 
     # Strip the base directory from the local path
     relative_path = os.path.relpath(local_path, base_dir)

@@ -2,6 +2,7 @@ import argparse
 from utils.modules_management import load_module
 import logging
 from utils.logger_setup import LoggerSetup
+import sys
 
 
 def main():
@@ -91,7 +92,7 @@ def main():
             module_instance.handle_module(args)
         except ImportError as e:
             logging.error(e)
-            exit(1)
+            sys.exit(1)
     else:
         generic_module = load_module('generic')
         generic_module.handle_module(args)

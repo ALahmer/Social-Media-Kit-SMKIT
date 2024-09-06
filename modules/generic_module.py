@@ -5,6 +5,7 @@ from utils.input_validation_management import get_input_parameter_web_urls
 from bs4 import BeautifulSoup
 from datetime import datetime
 import logging
+import sys
 
 
 class GenericModule(BaseModule):
@@ -19,7 +20,8 @@ class GenericModule(BaseModule):
         """
         # Check for required arguments
         if not args.pages or not args.post_type or not args.mode or not args.language:
-            raise ValueError("Pages, Post Type, Mode and Language are required for generic module posting.")
+            logging.error("Pages, Post Type, Mode and Language are required for generic module posting.")
+            sys.exit(1)
         logging.info(f"Handling generic module for Pages {args.pages}")
 
         # Check for invalid mode
@@ -80,9 +82,11 @@ class GenericModule(BaseModule):
                     article_modified_time = datetime.strptime(article_modified_time_str, '%Y-%m-%dT%H:%M:%S')
 
                 if minimum_date and article_modified_time < minimum_date:
-                    raise ValueError(f"URL: {web_urls[0]} - Article modified date is too old.")
+                    logging.error(f"URL: {web_urls[0]} - Article modified date is too old.")
+                    sys.exit(1)
             else:
-                raise ValueError(f"URL: {web_urls[0]} - Article modified date is not filled.")
+                logging.error(f"URL: {web_urls[0]} - Article modified date is not filled.")
+                sys.exit(1)
 
         self.generate_posts(page_info, post_type, mode, language)
 

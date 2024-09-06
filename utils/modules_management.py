@@ -1,4 +1,6 @@
 from importlib import import_module
+import logging
+import sys
 
 
 def load_module(module_name):
@@ -8,4 +10,5 @@ def load_module(module_name):
         module_class = getattr(module, module_class_name)
         return module_class()
     except (ImportError, AttributeError) as e:
-        raise ImportError(f"Module '{module_name}' not found or is not correctly implemented. Please ensure it exists.")
+        logging.error(f"Module '{module_name}' not found or is not correctly implemented. Please ensure it exists.")
+        sys.exit(1)
