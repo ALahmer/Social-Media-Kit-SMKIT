@@ -108,6 +108,9 @@ class NegapediaModule(BaseModule):
         """
         web_urls = get_input_parameter_web_urls(urls, self.module, remove_suffix, base_directory, base_url)
 
+        # Check if all URLs are valid article URLs
+        self.check_article_urls(web_urls)
+
         pages_info = self.extract_pages_info(web_urls, message, mode)
 
         self.generate_posts(pages_info, post_type, mode, language)
@@ -333,6 +336,19 @@ class NegapediaModule(BaseModule):
             negapedia_page_info['historical_polemic_comparison'] = historical_polemic_comparison
 
         return negapedia_pages_info
+
+    @staticmethod
+    def check_article_urls(urls: List[str]) -> None:
+        """
+        Checks if all URLs are valid article URLs. Logs an error and exits if any URL is invalid.
+
+        Args:
+            urls (List[str]): The list of URLs to check.
+        """
+        for url in urls:
+            if ".negapedia.org/articles" not in url:
+                logging.error(f"Invalid URL: {url}. The URLs provided with the --pages parameter must be article pages.")
+                sys.exit(1)
 
     @staticmethod
     def extract_negaranks(soup: BeautifulSoup) -> Optional[List[dict]]:
