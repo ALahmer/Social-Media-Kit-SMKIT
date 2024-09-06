@@ -7,7 +7,7 @@ import re
 
 def check_access_token():
     env_data = load_from_env()
-    return env_data and 'page_access_token' in env_data and env_data['page_access_token']
+    return env_data and 'facebook_page_access_token' in env_data and env_data['facebook_page_access_token']
 
 
 def is_token_expired(access_token):
@@ -34,26 +34,26 @@ def refresh_access_token(facebook_app_id, facebook_app_secret, short_lived_token
     if 'access_token' in new_token_info:
         return new_token_info['access_token']
     else:
-        print("Error refreshing access token")
+        print("Error refreshing facebook access token")
         return None
 
 
 def post_on_facebook(post_info, template, language, module, posting_settings):
     env_data = load_from_env()
-    if not env_data or 'page_access_token' not in env_data:
-        print("Access token not found. Please authenticate first.")
+
+    access_token = check_access_token()
+    if not access_token:
+        print("Facebook access token not found. Please fill the 'facebook_page_access_token' in the environment file.")
         return
 
-    access_token = env_data['page_access_token']
-
     if is_token_expired(access_token):
-        print("Access token expired. Refreshing...")
+        print("Facebook access token expired. Refreshing...")
         access_token = refresh_access_token(env_data['facebook_app_id'], env_data['facebook_app_secret'], access_token)
         if access_token:
-            env_data['page_access_token'] = access_token
+            env_data['facebook_page_access_token'] = access_token
             save_to_env(env_data)
         else:
-            print("Failed to refresh access token.")
+            print("Failed to refresh facebook access token.")
             return
 
     # Initialize the Graph API with your access token

@@ -53,8 +53,8 @@ def get_page_access_token():
 
     # Get the first page's access token
     if pages:
-        page_access_token = pages[0]['access_token']
-        env_data['page_access_token'] = page_access_token
+        facebook_page_access_token = pages[0]['access_token']
+        env_data['facebook_page_access_token'] = facebook_page_access_token
         save_to_env(env_data)
         return "Access token saved successfully. You can close this window."
     else:
