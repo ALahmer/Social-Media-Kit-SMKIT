@@ -7,6 +7,7 @@ from connectors.twitter_connector import post_on_twitter
 from connectors.web_connector import post_on_web
 from utils.plot_colors_management import PlotColorManager
 import requests
+import logging
 
 
 class BaseModule(ABC):
@@ -88,7 +89,7 @@ class BaseModule(ABC):
             response.encoding = 'utf-8'
             return response.text
         except requests.RequestException as e:
-            print(f"Failed to fetch the page content from {url}: {e}")
+            logging.error(f"Failed to fetch the page content from {url}: {e}")
             return None
 
     def generate_posts(self, post_info: Union[PageInfo, List[NegapediaPageInfo]], post_type: List[str], mode: str, language: str) -> None:
@@ -109,4 +110,4 @@ class BaseModule(ABC):
             elif channel == 'web':
                 post_on_web(post_info, mode, language, self.module, self.posting_settings)
             else:
-                print(f"Post type '{channel}' is not supported.")
+                logging.error(f"Post type '{channel}' is not supported.")

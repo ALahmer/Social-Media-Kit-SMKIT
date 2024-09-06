@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import cairosvg
 from utils.env_management import load_from_env
+import logging
 
 
 def fetch_image_as_stream(url):
@@ -12,7 +13,7 @@ def fetch_image_as_stream(url):
     if response.status_code == 200:
         return BytesIO(response.content)
     else:
-        print(f"Failed to download image from {url}")
+        logging.error(f"Failed to download image from {url}")
         return None
 
 
@@ -42,7 +43,7 @@ def save_svg(svg_element, div_container_name):
     svg_file_path = os.path.join(posts_images_absolute_destination_path, svg_filename)
     with open(svg_file_path, 'w') as f:
         f.write(svg_content)
-    print(f"SVG saved at: {svg_file_path}")
+    logging.info(f"SVG saved at: {svg_file_path}")
     return svg_file_path
 
 
@@ -52,5 +53,5 @@ def convert_svg_to_png(svg_file_path):
     """
     png_file_path = svg_file_path.replace('.svg', '.png')
     cairosvg.svg2png(url=svg_file_path, write_to=png_file_path)
-    print(f"SVG file {svg_file_path} converted to PNG: {png_file_path}")
+    logging.info(f"SVG file {svg_file_path} converted to PNG: {png_file_path}")
     return png_file_path

@@ -2,12 +2,13 @@ import tweepy
 from utils.env_management import load_from_env
 from utils.images_management import fetch_image_as_stream
 import re
+import logging
 
 
 def post_on_twitter(post_info, template, language, module, posting_settings):
     env_data = load_from_env()
     if not env_data or not all(k in env_data for k in ('twitter_api_key', 'twitter_api_secret_key', 'twitter_access_token', 'twitter_access_token_secret')):
-        print("Twitter credentials not found. Please add them to env.json.")
+        logging.error("Twitter credentials not found. Please add them to env.json.")
         return
 
     auth = tweepy.OAuth1UserHandler(
@@ -28,7 +29,7 @@ def post_on_twitter(post_info, template, language, module, posting_settings):
     # Load the template
     template_content = load_template(template, language, module)
     if not template_content:
-        print("Template could not be loaded.")
+        logging.error("Template could not be loaded.")
         return
 
     images = []
@@ -78,22 +79,22 @@ def post_to_twitter(api, client, message, images):
                 if media:
                     media_ids.append(media.media_id_string)
             except tweepy.TweepyException as e:
-                print(f"An error occurred while uploading image {image_info}: {e}")
+                logging.error(f"An error occurred while uploading image {image_info}: {e}")
 
         if media_ids:
             try:
-                client.create_tweet(text=message, media_ids=media_ids)   # {{to_check}} if tweet has certain hashtag the posting will go on 403 error (try to print verbose logs, example problematic link: https://www.w3schools.com/tags/tag_meta.asp)
-                print("Successfully posted the tweet with image.")
+                client.create_tweet(text=message, media_ids=media_ids)
+                logging.info("Successfully posted the tweet with image.")
             except tweepy.TweepyException as e:
-                print(f"An error occurred while creating the tweet: {e}")
+                logging.error(f"An error occurred while creating the tweet: {e}")
         else:
-            print("No images were uploaded. Post was not created.")
+            logging.error("No images were uploaded. Post was not created.")
     else:
         try:
-            client.create_tweet(text=message)   # {{to_check}} if tweet has certain hashtag the posting will go on 403 error (try to print verbose logs, example problematic link: https://www.w3schools.com/tags/tag_meta.asp)
-            print("Successfully posted the tweet.")
+            client.create_tweet(text=message)
+            logging.info("Successfully posted the tweet.")
         except tweepy.TweepyException as e:
-            print(f"An error occurred: {e}")
+            logging.error(f"An error occurred: {e}")
 
 
 def load_template(template, language, module):
@@ -105,7 +106,7 @@ def load_template(template, language, module):
         with open(file_path, 'r', encoding='utf-8') as template_file:
             return template_file.read()
     except FileNotFoundError:
-        print(f"Template file {file_path} not found.")
+        logging.error(f"Template file {file_path} not found.")
         return None
 
 

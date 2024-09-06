@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 from utils.env_management import load_from_env
 from bs4 import BeautifulSoup
+import logging
 
 
 def post_on_web(post_info, template, language, module, posting_settings):
@@ -14,7 +15,7 @@ def post_on_web(post_info, template, language, module, posting_settings):
     # Load the HTML template
     template_content = load_template(template, language, module)
     if not template_content:
-        print("Template could not be loaded.")
+        logging.error("Template could not be loaded.")
         return
 
     filled_content = template_content
@@ -33,7 +34,7 @@ def post_on_web(post_info, template, language, module, posting_settings):
     with open(file_path, 'w', encoding='utf-8') as output_file:
         output_file.write(filled_content)
 
-    print(f"Web page created successfully: {file_path}")
+    logging.info(f"Web page created successfully: {file_path}")
 
     return file_path
 
@@ -47,7 +48,7 @@ def load_template(template, language, module):
         with open(file_path, 'r', encoding='utf-8') as template_file:
             return template_file.read()
     except FileNotFoundError:
-        print(f"Template file {file_path} not found.")
+        logging.error(f"Template file {file_path} not found.")
         return None
 
 

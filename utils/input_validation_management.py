@@ -1,6 +1,7 @@
 import os
 import filetype
 from utils.env_management import load_from_env
+import logging
 
 env_data = load_from_env()
 
@@ -35,7 +36,7 @@ def process_input(input_path, module, args_remove_suffix, args_base_directory=No
         return process_file(input_path, args_remove_suffix, base_dir, base_url)
 
     if os.path.isdir(input_path):
-        print(f"Processing directory: {input_path}")
+        logging.info(f"Processing directory: {input_path}")
         return process_directory(input_path, args_remove_suffix, base_dir, base_url)
 
     raise ValueError(f"Invalid input path provided: {input_path}")
@@ -49,7 +50,7 @@ def process_file(input_path, args_remove_suffix, base_dir, base_url):
     """
     Processes a single file, checks if it is compressed, and maps to the corresponding web URL.
     """
-    print(f"Processing local file: {input_path}")
+    logging.info(f"Processing local file: {input_path}")
 
     if is_compressed_file(input_path):
         input_path = remove_compression_suffix(input_path)
@@ -59,7 +60,7 @@ def process_file(input_path, args_remove_suffix, base_dir, base_url):
             input_path = remove_extension_suffix(input_path)
 
     web_url = map_local_path_to_url(input_path, base_dir, base_url)
-    print(f"Mapped local file to web URL: {web_url}")
+    logging.info(f"Mapped local file to web URL: {web_url}")
     return [web_url]
 
 

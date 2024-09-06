@@ -367,13 +367,13 @@ class NegapediaModule(BaseModule):
                     negaranks_list = json.loads(negaranks_string)
                     return negaranks_list
                 except json.JSONDecodeError as e:
-                    print(f"Error decoding NEGARANKS: {e}")
+                    logging.error(f"Error decoding NEGARANKS: {e}")
                     return None
             else:
-                print("NEGARANKS variable not found in the script content.")
+                logging.error("NEGARANKS variable not found in the script content.")
                 return None
         else:
-            print("No script tag containing NEGARANKS variable found.")
+            logging.error("No script tag containing NEGARANKS variable found.")
             return None
 
     @staticmethod
@@ -521,7 +521,7 @@ class NegapediaModule(BaseModule):
         # Optionally show the plot
         # plt.show()
 
-        print(f"Historical {type_check.capitalize()} Levels plot for {url} saved at: {output_path}")
+        logging.info(f"Historical {type_check.capitalize()} Levels plot for {url} saved at: {output_path}")
         return historical_data_levels
 
     @staticmethod
@@ -882,7 +882,7 @@ class NegapediaModule(BaseModule):
             'location': "local",
         })
 
-        print(f"Comparison plot for {', '.join(urls)} saved at: {output_path}")
+        logging.info(f"Comparison plot for {', '.join(urls)} saved at: {output_path}")
         return comparison_data_levels
 
     @staticmethod

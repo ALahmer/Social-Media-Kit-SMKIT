@@ -8,4 +8,4 @@ def load_module(module_name):
         module_class = getattr(module, module_class_name)
         return module_class()
     except (ImportError, AttributeError) as e:
-        raise ImportError(f"Module '{module_name}' not found or is not correctly implemented. Please ensure it exists and has a class named '{module_class_name}'.")
+        raise ImportError(f"Module '{module_name}' not found or is not correctly implemented. Please ensure it exists.")

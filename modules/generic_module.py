@@ -20,7 +20,7 @@ class GenericModule(BaseModule):
         # Check for required arguments
         if not args.pages or not args.post_type or not args.mode or not args.language:
             raise ValueError("Pages, Post Type, Mode and Language are required for generic module posting.")
-        print(f"Handling generic module for Pages {args.pages}")
+        logging.info(f"Handling generic module for Pages {args.pages}")
 
         # Check for invalid mode
         if args.mode != 'summary':

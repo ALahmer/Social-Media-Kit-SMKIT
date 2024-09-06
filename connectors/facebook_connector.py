@@ -3,6 +3,7 @@ from datetime import datetime
 import requests
 from utils.env_management import load_from_env, save_to_env
 import re
+import logging
 
 
 def check_access_token():
@@ -34,7 +35,7 @@ def refresh_access_token(facebook_app_id, facebook_app_secret, short_lived_token
     if 'access_token' in new_token_info:
         return new_token_info['access_token']
     else:
-        print("Error refreshing facebook access token")
+        logging.error("Error refreshing Facebook access token")
         return None
 
 
@@ -43,17 +44,17 @@ def post_on_facebook(post_info, template, language, module, posting_settings):
 
     access_token = check_access_token()
     if not access_token:
-        print("Facebook access token not found. Please fill the 'facebook_page_access_token' in the environment file.")
+        logging.error("Facebook access token not found. Please fill the 'facebook_page_access_token' in the environment file.")
         return
 
     if is_token_expired(access_token):
-        print("Facebook access token expired. Refreshing...")
+        logging.warning("Facebook access token expired. Refreshing...")
         access_token = refresh_access_token(env_data['facebook_app_id'], env_data['facebook_app_secret'], access_token)
         if access_token:
             env_data['facebook_page_access_token'] = access_token
             save_to_env(env_data)
         else:
-            print("Failed to refresh facebook access token.")
+            logging.error("Failed to refresh facebook access token.")
             return
 
     # Initialize the Graph API with your access token
@@ -62,7 +63,7 @@ def post_on_facebook(post_info, template, language, module, posting_settings):
     # Load the template
     template_content = load_template(template, language, module)
     if not template_content:
-        print("Template could not be loaded.")
+        logging.error("Template could not be loaded.")
         return
 
     images = []
@@ -112,7 +113,7 @@ def post_to_facebook(graph, message, images):
                         media = graph.put_photo(image=image, published=False)
                         media_ids.append(media['id'])
             except facebook.GraphAPIError as e:
-                print(f"An error occurred while uploading image {image_info}: {e}")
+                logging.error(f"An error occurred while uploading image {image_info}: {e}")
 
         if media_ids:
             try:
@@ -121,18 +122,18 @@ def post_to_facebook(graph, message, images):
                     args[f"attached_media[{idx}]"] = f'{{"media_fbid":"{media_id}"}}'
 
                 post = graph.request(path='/me/feed', args=args, method='POST')
-                print(f"Successfully posted with post ID: {post['id']}")
+                logging.info(f"Successfully posted with post ID: {post['id']}")
             except facebook.GraphAPIError as e:
-                print(f"An error occurred while creating the post: {e}")
+                logging.error(f"An error occurred while creating the post: {e}")
         else:
-            print("No images were uploaded. Post was not created.")
+            logging.error("No images were uploaded. Post was not created.")
     else:
         try:
             post = graph.put_object(parent_object='me', connection_name='feed', message=message)
             # Print the post ID
-            print(f"Successfully posted with post ID: {post['id']}")
+            logging.info(f"Successfully posted with post ID: {post['id']}")
         except facebook.GraphAPIError as e:
-            print(f"An error occurred: {e}")
+            logging.error(f"An error occurred: {e}")
 
 
 def load_template(template, language, module):
@@ -144,7 +145,7 @@ def load_template(template, language, module):
         with open(file_path, 'r', encoding='utf-8') as template_file:
             return template_file.read()
     except FileNotFoundError:
-        print(f"Template file {file_path} not found.")
+        logging.error(f"Template file {file_path} not found.")
         return None
 
 

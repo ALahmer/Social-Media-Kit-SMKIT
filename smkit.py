@@ -1,8 +1,12 @@
 import argparse
 from utils.modules_management import load_module
+import logging
+from utils.logger_setup import LoggerSetup
 
 
 def main():
+    LoggerSetup(level=logging.INFO)
+
     parser = argparse.ArgumentParser(description="Social Media Kit")
     parser.add_argument('--module', type=str, help='Specify the module (e.g., negapedia)')
     parser.add_argument('--pages', nargs='+', type=str, help='Specify the pages to post about')
@@ -86,7 +90,7 @@ def main():
             module_instance = load_module(args.module.lower())
             module_instance.handle_module(args)
         except ImportError as e:
-            print(e)
+            logging.error(e)
             exit(1)
     else:
         generic_module = load_module('generic')
