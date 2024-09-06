@@ -13,6 +13,19 @@ SMKIT is a versatile tool designed to automate the management of content across 
 
 ---
 
+## Installation
+
+To get started with SMKIT, clone the repository and install the required dependencies:
+
+```bash
+git clone https://github.com/ALahmer/Social-Media-Kit-SMKIT.git
+cd Social-Media-Kit-SMKIT
+pip install -r requirements.txt
+```
+Ensure you have Python installed (version 3.6 or higher).
+
+---
+
 ## Requirements
 
 Ensure you have Python installed (version 3.6 or higher) and install the following dependencies:
@@ -126,7 +139,6 @@ An example of a properly configured `env.json` file:
   "twitter_api_secret_key": "YOUR_TWITTER_API_SECRET_KEY",
   "twitter_access_token": "YOUR_TWITTER_ACCESS_TOKEN",
   "twitter_access_token_secret": "YOUR_TWITTER_ACCESS_TOKEN_SECRET"
-  ...
 }
 ```
 
@@ -161,7 +173,6 @@ Example `env.json`:
   "facebook_app_id": "YOUR_FACEBOOK_APP_ID",
   "facebook_app_secret": "YOUR_FACEBOOK_APP_SECRET",
   "facebook_page_access_token": "YOUR_FACEBOOK_PAGE_ACCESS_TOKEN",
-  ...
 }
 ```
 Make sure to keep the `env.json` file secure, as it contains sensitive information necessary for SMKIT to authenticate and interact with the social media platforms.
@@ -197,7 +208,6 @@ Example `env.json`:
   "twitter_api_secret_key": "YOUR_TWITTER_API_SECRET_KEY",
   "twitter_access_token": "YOUR_TWITTER_ACCESS_TOKEN",
   "twitter_access_token_secret": "YOUR_TWITTER_ACCESS_TOKEN_SECRET",
-  ...
 }
 ```
 Make sure to keep the `env.json` file secure, as it contains sensitive information necessary for SMKIT to authenticate and interact with the social media platforms.
