@@ -32,19 +32,15 @@ Ensure you have Python installed (version 3.6 or higher) and install the followi
 
 ```bash
     requests~=2.31.0
-    flask~=3.0.3
     matplotlib~=3.6.0
     seaborn~=0.13.2
     beautifulsoup4~=4.12.3
-    DateTime~=5.0
-    argparse~=1.4.0
     tweepy~=4.14.0
     facebook-sdk~=3.1.0
-    Pillow~=9.2.0
     filetype~=1.2.0
-    CairoSVG~=2.7.1
-    logging~=0.4.9.6
     colorlog~=6.8.2
+    Pillow~=9.2.0
+    CairoSVG~=2.7.1
 ```
 
 Install dependencies with:
