@@ -143,12 +143,7 @@ class WebConnector:
     def replace_video(filled_content, post_info):
         video_html = ''
         if post_info.get('video'):
-            video_html = f'''
-                <video controls>
-                    <source src="{str(post_info.get('video'))}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            '''
+            video_html = f"<iframe width=\"560\" height=\"315\" src=\"{str(post_info.get('video'))}\" frameborder=\"0\" allowfullscreen></iframe>"
 
         return filled_content.replace('{{video}}', video_html)
 
