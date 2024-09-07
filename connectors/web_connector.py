@@ -143,7 +143,7 @@ class WebConnector:
     def replace_video(filled_content, post_info):
         video_html = ''
         if post_info.get('video'):
-            video_html = f"<iframe width=\"560\" height=\"315\" src=\"{str(post_info.get('video'))}\" frameborder=\"0\" allowfullscreen></iframe>"
+            video_html = f"\n<iframe width=\"560\" height=\"315\" src=\"{str(post_info.get('video'))}\" frameborder=\"0\" allowfullscreen></iframe>"
 
         return filled_content.replace('{{video}}', video_html)
 
@@ -151,12 +151,7 @@ class WebConnector:
     def replace_audio(filled_content, post_info):
         audio_html = ''
         if post_info.get('audio'):
-            audio_html = f'''
-                <audio controls>
-                    <source src="{str(post_info.get('audio'))}" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                </audio>
-            '''
+            audio_html = f"\n<iframe src=\"{str(post_info.get('audio'))}\"></iframe>"
 
         return filled_content.replace('{{audio}}', audio_html)
 

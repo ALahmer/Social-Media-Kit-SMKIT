@@ -63,6 +63,8 @@ def main():
     #         # "http://it.negapedia.org/articles/Associazione_Sportiva_Roma",
     #         # "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/",
     #         # "https://www.keithandthegirl.com/vip/bonus/episode/9/40/this-is-40",        # containing og:video
+    #         # "https://www.storyblocks.com/audio/stock/cinematic-whoosh-impact-reveal-4-rbjxwyoxfd8k8p0y12i.html"        # containing og:audio:url
+    #         # "https://open.spotify.com/track/7zrpoAJte9o12TzawqgdD0"        # containing og:audio
     #         # "https://www.ilpost.it/2024/08/18/governo-germania-automobili/",
     #         # "https://www.buzzfeed.com/sarahaspler/women-who-make-six-figures-are-sharing-their-jobs-1",
     #         # "https://ahrefs.com/blog/it/backlink-seo/",
