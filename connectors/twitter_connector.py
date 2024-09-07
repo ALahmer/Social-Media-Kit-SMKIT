@@ -89,16 +89,16 @@ class TwitterConnector:
 
             if media_ids:
                 try:
-                    client.create_tweet(text=message, media_ids=media_ids)
-                    logging.info("Successfully posted the tweet with image.")
+                    tweet = client.create_tweet(text=message, media_ids=media_ids)
+                    logging.info(f"[twitter-connector] Successfully created tweet: {tweet.data['id']}")
                 except tweepy.TweepyException as e:
                     logging.error(f"An error occurred while creating the tweet: {e}")
             else:
                 logging.error("No images were uploaded. Post was not created.")
         else:
             try:
-                client.create_tweet(text=message)
-                logging.info("Successfully posted the tweet.")
+                tweet = client.create_tweet(text=message)
+                logging.info(f"[twitter-connector] Successfully created tweet: {tweet.data['id']}")
             except tweepy.TweepyException as e:
                 logging.error(f"An error occurred: {e}")
 

@@ -165,7 +165,7 @@ class FacebookConnector:
                         args[f"attached_media[{idx}]"] = f'{{"media_fbid":"{media_id}"}}'
 
                     post = graph.request(path='/me/feed', args=args, method='POST')
-                    logging.info(f"Successfully posted with post ID: {post['id']}")
+                    logging.info(f"[facebook-connector] Successfully created post: {post['id']}")
                 except facebook.GraphAPIError as e:
                     logging.error(f"An error occurred while creating the post: {e}")
             else:
@@ -174,7 +174,7 @@ class FacebookConnector:
             try:
                 post = graph.put_object(parent_object='me', connection_name='feed', message=message)
                 # Print the post ID
-                logging.info(f"Successfully posted with post ID: {post['id']}")
+                logging.info(f"[facebook-connector] Successfully created post: {post['id']}")
             except facebook.GraphAPIError as e:
                 logging.error(f"An error occurred: {e}")
 

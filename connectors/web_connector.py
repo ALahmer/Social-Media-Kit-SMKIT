@@ -44,7 +44,7 @@ class WebConnector:
         with open(file_path, 'w', encoding='utf-8') as output_file:
             output_file.write(filled_content)
 
-        logging.info(f"Web page created successfully: {file_path}")
+        logging.info(f"[web-connector] Successfully created web page: {file_path}")
 
         return file_path
 
