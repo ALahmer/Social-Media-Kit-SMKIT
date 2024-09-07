@@ -1,7 +1,9 @@
 {
   "facebook_app_id": "",
   "facebook_app_secret": "",
-  "facebook_page_access_token": "",
+  "facebook_page_id": "",
+  "facebook_short_lived_user_access_token": "",
+  "facebook_long_lived_page_access_token": "",
   "twitter_api_key": "",
   "twitter_api_secret_key": "",
   "twitter_access_token": "",

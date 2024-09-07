@@ -18,18 +18,24 @@ class FacebookConnector:
 
     def post_on_facebook(self):
         access_token = self.check_access_token()
-        if not access_token:
-            logging.error("Facebook access token not found. Please fill the 'facebook_page_access_token' in the environment file.")
-            return
 
-        if self.is_token_expired(access_token):
-            logging.warning("Facebook access token expired. Refreshing...")
-            access_token = self.refresh_access_token(self.env_data['facebook_app_id'], self.env_data['facebook_app_secret'], access_token)
-            if access_token:
-                self.env_data['facebook_page_access_token'] = access_token
-                save_to_env(self.env_data)
+        # If no valid long-lived page access token, refresh tokens
+        if not access_token or self.is_token_expired(access_token):
+            logging.warning("Facebook long-lived page access token is missing or expired. Refreshing...")
+            # Refresh the long-lived user access token
+            user_access_token = self.refresh_long_lived_user_access_token()
+            if user_access_token:
+                # Obtain the long-lived page access token using the refreshed user access token
+                page_access_token = self.get_long_lived_page_access_token(user_access_token)
+                if page_access_token:
+                    self.env_data['facebook_long_lived_page_access_token'] = page_access_token
+                    save_to_env(self.env_data)
+                    access_token = page_access_token
+                else:
+                    logging.error("Failed to get long-lived page access token.")
+                    return
             else:
-                logging.error("Failed to refresh facebook access token.")
+                logging.error("Failed to refresh Facebook user access token.")
                 return
 
         # Initialize the Graph API with your access token
@@ -66,7 +72,7 @@ class FacebookConnector:
         self.post_to_facebook(graph, filled_content, images)
 
     def check_access_token(self):
-        return self.env_data and 'facebook_page_access_token' in self.env_data and self.env_data['facebook_page_access_token']
+        return self.env_data.get('facebook_long_lived_page_access_token')
 
     @staticmethod
     def is_token_expired(access_token):
@@ -78,22 +84,54 @@ class FacebookConnector:
 
         if 'data' in token_info and 'expires_at' in token_info['data']:
             expiry_timestamp = token_info['data']['expires_at']
+            if expiry_timestamp == 0:
+                return False
             expiry_datetime = datetime.fromtimestamp(expiry_timestamp)
             return datetime.utcnow() > expiry_datetime
         return True
 
-    @staticmethod
-    def refresh_access_token(facebook_app_id, facebook_app_secret, short_lived_token):
+    def refresh_long_lived_user_access_token(self):
+        """Refresh the long-lived user access token."""
+        short_lived_token = self.env_data.get('facebook_short_lived_user_access_token')
+        if not short_lived_token:
+            logging.error("Short-lived user access token not found in the environment file.")
+            return None
+
         refresh_url = (
             f"https://graph.facebook.com/v12.0/oauth/access_token?"
-            f"grant_type=fb_exchange_token&client_id={facebook_app_id}&client_secret={facebook_app_secret}&fb_exchange_token={short_lived_token}"
+            f"grant_type=fb_exchange_token&client_id={self.env_data['facebook_app_id']}&"
+            f"client_secret={self.env_data['facebook_app_secret']}&"
+            f"fb_exchange_token={short_lived_token}"
         )
         response = requests.get(refresh_url)
         new_token_info = response.json()
         if 'access_token' in new_token_info:
+            logging.info("Successfully refreshed long-lived user access token.")
             return new_token_info['access_token']
         else:
-            logging.error("Error refreshing Facebook access token")
+            logging.error("Error refreshing Facebook user access token.")
+            if response.text:
+                logging.error(response.text)
+            return None
+
+    def get_long_lived_page_access_token(self, user_access_token):
+        """Get the long-lived page access token using the long-lived user access token."""
+        page_id = self.env_data.get('facebook_page_id')
+        if not page_id:
+            logging.error("Facebook page ID not found in the environment file.")
+            return None
+
+        page_token_url = (
+            f"https://graph.facebook.com/v12.0/{page_id}?fields=access_token&access_token={user_access_token}"
+        )
+        response = requests.get(page_token_url)
+        page_info = response.json()
+
+        if 'access_token' in page_info:
+            logging.info("Successfully obtained long-lived page access token.")
+            return page_info['access_token']
+        else:
+            logging.error("Error obtaining long-lived page access token.")
             if response.text:
                 logging.error(response.text)
             return None
