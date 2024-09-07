@@ -58,11 +58,19 @@ SMKIT can be run from the command line. Below are examples of how to use it with
 ```sh
 python smkit.py --mode summary --pages "https://example.com/page1" --post_type "twitter" "facebook"
 ```
+*practical example*:
+```sh
+python smkit.py --mode summary --pages "https://techcrunch.com/2024/08/10/after-global-it-meltdown-crowdstrike-courts-hackers-with-action-figures-and-gratitude/" --post_type "web" "twitter" "facebook"
+```
 
 ### Negapedia Module (Mode: Summary)
 
 ```sh
 python smkit.py --module negapedia --mode summary --pages "https://negapedia.org/articles/TopicA" --language "en" --post_type "web"
+```
+*practical example*:
+```sh
+python smkit.py --module negapedia --mode summary --pages "http://en.negapedia.org/articles/George_W._Bush" --language "en" --post_type "web" "twitter" "facebook"
 ```
 
 ### Negapedia Module (Mode: Comparison)
@@ -70,11 +78,19 @@ python smkit.py --module negapedia --mode summary --pages "https://negapedia.org
 ```sh
 python smkit.py --module negapedia --mode comparison --pages "https://negapedia.org/articles/TopicA" "https://negapedia.org/articles/TopicB" --language "it" --post_type "facebook" "twitter"
 ```
+*practical example*:
+```sh
+python smkit.py --module negapedia --mode comparison --pages "http://en.negapedia.org/articles/George_W._Bush" "http://en.negapedia.org/articles/Barack_Obama" --language "it" --post_type "web" "facebook" "twitter"
+```
 
 ### Negapedia Module (Mode: Ranking)
 
 ```sh
 python smkit.py --module negapedia --mode ranking --pages "/var/www/negapedia/en/html/news/" --language "en" --post_type "web" --ranking_fields "recent_conflict_levels" "recent_polemic_levels"
+```
+*practical example*:
+```sh
+python smkit.py --module negapedia --mode ranking --pages "http://it.negapedia.org/articles/Atalanta_Bergamasca_Calcio" "http://it.negapedia.org/articles/Bologna_Football_Club_1909" "http://it.negapedia.org/articles/Cagliari_Calcio" "http://it.negapedia.org/articles/Empoli_Football_Club" "http://it.negapedia.org/articles/ACF_Fiorentina" "http://it.negapedia.org/articles/Frosinone_Calcio" "http://it.negapedia.org/articles/Genoa_Cricket_and_Football_Club" "http://it.negapedia.org/articles/Football_Club_Internazionale_Milano" "http://it.negapedia.org/articles/Juventus_Football_Club" "http://it.negapedia.org/articles/Societ%C3%A0_Sportiva_Lazio" "http://it.negapedia.org/articles/Unione_Sportiva_Lecce" "http://it.negapedia.org/articles/Associazione_Calcio_Milan" "http://it.negapedia.org/articles/Associazione_Calcio_Monza" "http://it.negapedia.org/articles/Societ%C3%A0_Sportiva_Calcio_Napoli" "http://it.negapedia.org/articles/Associazione_Sportiva_Roma" "http://it.negapedia.org/articles/Unione_Sportiva_Salernitana_1919" "http://it.negapedia.org/articles/Unione_Sportiva_Sassuolo_Calcio" "http://it.negapedia.org/articles/Torino_Football_Club" "http://it.negapedia.org/articles/Udinese_Calcio" "http://it.negapedia.org/articles/Hellas_Verona_Football_Club" --language "it" --post_type "web" "facebook" "twitter"
 ```
 
 ---

@@ -21,7 +21,7 @@ class FacebookConnector:
 
         # If no valid long-lived page access token, refresh tokens
         if not access_token or self.is_token_expired(access_token):
-            logging.warning("Facebook long-lived page access token is missing or expired. Refreshing...")
+            logging.warning("[facebook-connector] Facebook long-lived page access token is missing or expired. Refreshing...")
             # Refresh the long-lived user access token
             user_access_token = self.refresh_long_lived_user_access_token()
             if user_access_token:
@@ -32,10 +32,10 @@ class FacebookConnector:
                     save_to_env(self.env_data)
                     access_token = page_access_token
                 else:
-                    logging.error("Failed to get long-lived page access token.")
+                    logging.error("[facebook-connector] Failed to get long-lived page access token.")
                     return
             else:
-                logging.error("Failed to refresh Facebook user access token.")
+                logging.error("[facebook-connector] Failed to refresh Facebook user access token.")
                 return
 
         # Initialize the Graph API with your access token
@@ -44,7 +44,7 @@ class FacebookConnector:
         # Load the template
         template_content = self.load_template()
         if not template_content:
-            logging.error("Template could not be loaded.")
+            logging.error("[facebook-connector] Template could not be loaded.")
             return
 
         images = []
@@ -94,7 +94,7 @@ class FacebookConnector:
         """Refresh the long-lived user access token."""
         short_lived_token = self.env_data.get('facebook_short_lived_user_access_token')
         if not short_lived_token:
-            logging.error("Short-lived user access token not found in the environment file.")
+            logging.error("[facebook-connector] Short-lived user access token not found in the environment file.")
             return None
 
         refresh_url = (
@@ -106,19 +106,19 @@ class FacebookConnector:
         response = requests.get(refresh_url)
         new_token_info = response.json()
         if 'access_token' in new_token_info:
-            logging.info("Successfully refreshed long-lived user access token.")
+            logging.info("[facebook-connector] Successfully refreshed long-lived user access token.")
             return new_token_info['access_token']
         else:
-            logging.error("Error refreshing Facebook user access token.")
+            logging.error("[facebook-connector] Error refreshing Facebook user access token.")
             if response.text:
-                logging.error(response.text)
+                logging.error(f"[facebook-connector] ERROR: {response.text}")
             return None
 
     def get_long_lived_page_access_token(self, user_access_token):
         """Get the long-lived page access token using the long-lived user access token."""
         page_id = self.env_data.get('facebook_page_id')
         if not page_id:
-            logging.error("Facebook page ID not found in the environment file.")
+            logging.error("[facebook-connector] Facebook page ID not found in the environment file.")
             return None
 
         page_token_url = (
@@ -128,12 +128,12 @@ class FacebookConnector:
         page_info = response.json()
 
         if 'access_token' in page_info:
-            logging.info("Successfully obtained long-lived page access token.")
+            logging.info("[facebook-connector] Successfully obtained long-lived page access token.")
             return page_info['access_token']
         else:
-            logging.error("Error obtaining long-lived page access token.")
+            logging.error("[facebook-connector] Error obtaining long-lived page access token.")
             if response.text:
-                logging.error(response.text)
+                logging.error(f"[facebook-connector] ERROR: {response.text}")
             return None
 
     @staticmethod
@@ -156,7 +156,7 @@ class FacebookConnector:
                             media = graph.put_photo(image=image, published=False)
                             media_ids.append(media['id'])
                 except facebook.GraphAPIError as e:
-                    logging.error(f"An error occurred while uploading image {image_info}: {e}")
+                    logging.error(f"[facebook-connector] An error occurred while uploading image {image_info}: {e}")
 
             if media_ids:
                 try:
@@ -167,16 +167,16 @@ class FacebookConnector:
                     post = graph.request(path='/me/feed', args=args, method='POST')
                     logging.info(f"[facebook-connector] Successfully created post: {post['id']}")
                 except facebook.GraphAPIError as e:
-                    logging.error(f"An error occurred while creating the post: {e}")
+                    logging.error(f"[facebook-connector] An error occurred while creating the post: {e}")
             else:
-                logging.error("No images were uploaded. Post was not created.")
+                logging.error("[facebook-connector] No images were uploaded. Post was not created.")
         else:
             try:
                 post = graph.put_object(parent_object='me', connection_name='feed', message=message)
                 # Print the post ID
                 logging.info(f"[facebook-connector] Successfully created post: {post['id']}")
             except facebook.GraphAPIError as e:
-                logging.error(f"An error occurred: {e}")
+                logging.error(f"[facebook-connector] An error occurred: {e}")
 
     def load_template(self):
         """
@@ -187,7 +187,7 @@ class FacebookConnector:
             with open(file_path, 'r', encoding='utf-8') as template_file:
                 return template_file.read()
         except FileNotFoundError:
-            logging.error(f"Template file {file_path} not found.")
+            logging.error(f"[facebook-connector] Template file {file_path} not found.")
             return None
 
     def convert_pageinfo_to_filled_content(self, filled_content):

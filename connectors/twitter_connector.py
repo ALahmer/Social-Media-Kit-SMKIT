@@ -17,7 +17,7 @@ class TwitterConnector:
 
     def post_on_twitter(self):
         if not self.env_data or not all(k in self.env_data for k in ('twitter_api_key', 'twitter_api_secret_key', 'twitter_access_token', 'twitter_access_token_secret')):
-            logging.error("Twitter credentials not found. Please add them to env.json.")
+            logging.error("[twitter-connector] Twitter credentials not found. Please add them to env.json.")
             return
 
         auth = tweepy.OAuth1UserHandler(
@@ -38,7 +38,7 @@ class TwitterConnector:
         # Load the template
         template_content = self.load_template()
         if not template_content:
-            logging.error("Template could not be loaded.")
+            logging.error("[twitter-connector] Template could not be loaded.")
             return
 
         images = []
@@ -85,22 +85,22 @@ class TwitterConnector:
                     if media:
                         media_ids.append(media.media_id_string)
                 except tweepy.TweepyException as e:
-                    logging.error(f"An error occurred while uploading image {image_info}: {e}")
+                    logging.error(f"[twitter-connector] An error occurred while uploading image {image_info}: {e}")
 
             if media_ids:
                 try:
                     tweet = client.create_tweet(text=message, media_ids=media_ids)
                     logging.info(f"[twitter-connector] Successfully created tweet: {tweet.data['id']}")
                 except tweepy.TweepyException as e:
-                    logging.error(f"An error occurred while creating the tweet: {e}")
+                    logging.error(f"[twitter-connector] An error occurred while creating the tweet: {e}")
             else:
-                logging.error("No images were uploaded. Post was not created.")
+                logging.error("[twitter-connector] No images were uploaded. Post was not created.")
         else:
             try:
                 tweet = client.create_tweet(text=message)
                 logging.info(f"[twitter-connector] Successfully created tweet: {tweet.data['id']}")
             except tweepy.TweepyException as e:
-                logging.error(f"An error occurred: {e}")
+                logging.error(f"[twitter-connector] An error occurred: {e}")
 
     def load_template(self):
         """
@@ -111,7 +111,7 @@ class TwitterConnector:
             with open(file_path, 'r', encoding='utf-8') as template_file:
                 return template_file.read()
         except FileNotFoundError:
-            logging.error(f"Template file {file_path} not found.")
+            logging.error(f"[twitter-connector] Template file {file_path} not found.")
             return None
 
     def convert_pageinfo_to_filled_content(self, filled_content):

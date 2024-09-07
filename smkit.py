@@ -68,6 +68,26 @@ def main():
     #         # "https://www.w3schools.com/tags/tag_meta.asp",
     #         # "https://www.bbc.com/news/articles/cj08mn24jplo",
     #         # "https://www.thetimes.com/sport/tennis/article/jannik-sinner-escapes-drugs-ban-failed-tests-tennis-world-no1-ksp89hmnc",
+    #         # "http://it.negapedia.org/articles/Atalanta_Bergamasca_Calcio"
+    #         # "http://it.negapedia.org/articles/Bologna_Football_Club_1909"
+    #         # "http://it.negapedia.org/articles/Cagliari_Calcio"
+    #         # "http://it.negapedia.org/articles/Empoli_Football_Club"
+    #         # "http://it.negapedia.org/articles/ACF_Fiorentina"
+    #         # "http://it.negapedia.org/articles/Frosinone_Calcio"
+    #         # "http://it.negapedia.org/articles/Genoa_Cricket_and_Football_Club"
+    #         # "http://it.negapedia.org/articles/Football_Club_Internazionale_Milano"
+    #         # "http://it.negapedia.org/articles/Juventus_Football_Club"
+    #         # "http://it.negapedia.org/articles/Societ%C3%A0_Sportiva_Lazio"
+    #         # "http://it.negapedia.org/articles/Unione_Sportiva_Lecce"
+    #         # "http://it.negapedia.org/articles/Associazione_Calcio_Milan"
+    #         # "http://it.negapedia.org/articles/Associazione_Calcio_Monza"
+    #         # "http://it.negapedia.org/articles/Societ%C3%A0_Sportiva_Calcio_Napoli"
+    #         # "http://it.negapedia.org/articles/Associazione_Sportiva_Roma"
+    #         # "http://it.negapedia.org/articles/Unione_Sportiva_Salernitana_1919"
+    #         # "http://it.negapedia.org/articles/Unione_Sportiva_Sassuolo_Calcio"
+    #         # "http://it.negapedia.org/articles/Torino_Football_Club"
+    #         # "http://it.negapedia.org/articles/Udinese_Calcio"
+    #         # "http://it.negapedia.org/articles/Hellas_Verona_Football_Club"
     #     ],
     #     "minimum_article_modified_date": None,
     #     "base_directory": None,

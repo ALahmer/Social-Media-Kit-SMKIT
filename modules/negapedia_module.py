@@ -52,7 +52,7 @@ class NegapediaModule(BaseModule):
             if len(args.pages) < 2:
                 logging.error("The 'ranking' mode requires at least two URLs in the '--pages' argument.")
                 return
-            if len(args.ranking_fields) < 1:
+            if args.ranking_fields is None or len(args.ranking_fields) < 1:
                 logging.warning("The 'ranking' mode requires ranking field in the '--ranking_fields' argument. All ranking fields will be used for the ranking")
                 # Save ranking fields on which the ranking will be built, forcing all of them as no choice have been made
                 self.posting_settings['ranking_fields'] = ["recent_conflict_levels", "recent_polemic_levels", "mean_conflict_level", "mean_polemic_level"]
@@ -880,7 +880,7 @@ class NegapediaModule(BaseModule):
         plt.ylabel(y_label, fontsize=14)
         plot_title = get_translation("plot_title_comparison_of_historical_levels", self.posting_settings['language'], type_check=type_check.capitalize())
         plt.title(plot_title, fontsize=16)
-        plt.legend(fontsize=12)
+        plt.legend(fontsize='small', framealpha=0.5)
 
         # Adjust x-axis and y-axis ticks
         plt.grid(True, linestyle='--', linewidth=0.5)
