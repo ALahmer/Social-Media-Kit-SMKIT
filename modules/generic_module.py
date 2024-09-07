@@ -22,18 +22,19 @@ class GenericModule(BaseModule):
         if not args.pages or not args.post_type or not args.mode or not args.language:
             logging.error("Pages, Post Type, Mode and Language are required for generic module posting.")
             sys.exit(1)
-        logging.info(f"Handling generic module for Pages {args.pages}")
 
         # Check for invalid mode
         if args.mode != 'summary':
             logging.error(f"Error: Mode '{args.mode}' is not accepted for generic module.")
             return
 
+        self.posting_settings['language'] = args.language
+
+        logging.info(f"Handling generic module for Pages {args.pages}")
         self.process_pages(
             urls=args.pages,
             post_type=args.post_type,
             mode=args.mode,
-            language=args.language,
             remove_suffix=args.remove_suffix,
             base_directory=args.base_directory,
             base_url=args.base_url,
@@ -46,7 +47,6 @@ class GenericModule(BaseModule):
             urls: List[str],
             post_type: List[str],
             mode: str,
-            language: str,
             remove_suffix: Optional[bool] = None,
             base_directory: Optional[str] = None,
             base_url: Optional[str] = None,
@@ -60,7 +60,6 @@ class GenericModule(BaseModule):
             urls (List[str]): The list of URLs to process.
             post_type (List[str]): The types of posts to create (e.g., 'facebook', 'twitter', 'web').
             mode (str): The mode to analyze topics (e.g., 'comparison', 'summary').
-            language (str): The language in which to generate the posts.
             remove_suffix (Optional[bool]): Whether to remove suffixes from URLs.
             base_directory (Optional[str]): The base directory for processing.
             base_url (Optional[str]): The base URL for mapping local files to web URLs.
@@ -88,7 +87,7 @@ class GenericModule(BaseModule):
                 logging.error(f"URL: {web_urls[0]} - Article modified date is not filled.")
                 sys.exit(1)
 
-        self.generate_posts(page_info, post_type, mode, language)
+        self.generate_posts(page_info, post_type, mode)
 
     def extract_pages_info(self, urls: List[str], message: Optional[str], mode: str) -> PageInfo:
         """

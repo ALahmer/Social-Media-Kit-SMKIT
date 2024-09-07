@@ -2,6 +2,7 @@ from .base_module import BaseModule
 from schemas.negapedia_pageinfo import NegapediaPageInfo
 from typing import Any, List, Optional, Dict, Union
 from utils.input_validation_management import get_input_parameter_web_urls
+from utils.translations_management import get_translation
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from utils.env_management import load_from_env
@@ -67,12 +68,13 @@ class NegapediaModule(BaseModule):
             "number_of_social_jumps_to_extract": args.number_of_social_jumps_to_extract,
         }
 
+        self.posting_settings['language'] = args.language
+
         logging.info(f"Handling negapedia module for Pages {args.pages}")
         self.process_pages(
             urls=args.pages,
             post_type=args.post_type,
             mode=args.mode,
-            language=args.language,
             remove_suffix=args.remove_suffix,
             base_directory=args.base_directory,
             base_url=args.base_url,
@@ -85,7 +87,6 @@ class NegapediaModule(BaseModule):
         urls: List[str],
         post_type: List[str],
         mode: str,
-        language: str,
         remove_suffix: Optional[bool] = None,
         base_directory: Optional[str] = None,
         base_url: Optional[str] = None,
@@ -99,7 +100,6 @@ class NegapediaModule(BaseModule):
             urls (List[str]): The list of URLs to process.
             post_type (List[str]): The types of posts to create (e.g., 'facebook', 'twitter', 'web').
             mode (str): The mode to analyze topics (e.g., 'summary', 'comparison', 'ranking').
-            language (str): The language in which to generate the posts.
             remove_suffix (Optional[bool], optional): Flag indicating whether to remove .html or .htm suffixes from URLs.
             base_directory (Optional[str], optional): The base directory in the filesystem for local processing.
             base_url (Optional[str], optional): The base URL for mapping local files to web URLs.
@@ -113,7 +113,7 @@ class NegapediaModule(BaseModule):
 
         pages_info = self.extract_pages_info(web_urls, message, mode)
 
-        self.generate_posts(pages_info, post_type, mode, language)
+        self.generate_posts(pages_info, post_type, mode)
 
     def extract_pages_info(self, urls: List[str], message: Optional[str], mode: str) -> List[NegapediaPageInfo]:
         """
@@ -229,7 +229,7 @@ class NegapediaModule(BaseModule):
 
         except Exception as e:
             logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
-            return negapedia_page_info
+            sys.exit(1)
 
         return negapedia_page_info
 
@@ -267,7 +267,7 @@ class NegapediaModule(BaseModule):
 
                 if not page_content:
                     logging.error(f"Failed to fetch page content for URL: {url}")
-                    continue
+                    sys.exit(1)
 
                 soup = BeautifulSoup(page_content, 'html.parser')
 
@@ -319,7 +319,7 @@ class NegapediaModule(BaseModule):
 
             except Exception as e:
                 logging.error(f"Failed to process dynamic data extraction for URL={url}: {e}")
-                continue
+                sys.exit(1)
 
         historical_conflict_comparison = self.extract_comparison_of_historical_plotted_data('conflict', negaranks_for_comparison, plot_colors_for_comparison, urls_for_comparison, titles_for_comparison)
         historical_polemic_comparison = self.extract_comparison_of_historical_plotted_data('polemic', negaranks_for_comparison, plot_colors_for_comparison, urls_for_comparison, titles_for_comparison)
@@ -458,8 +458,7 @@ class NegapediaModule(BaseModule):
         # Return a default value if no title is found
         return url
 
-    @staticmethod
-    def extract_historical_plotted_data(type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], plot_color: str, url: str, title: str) -> List[dict]:
+    def extract_historical_plotted_data(self, type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], plot_color: str, url: str, title: str) -> List[dict]:
         """
         Extracts and plots historical conflict data from the NEGARANKS dictionary.
 
@@ -496,13 +495,16 @@ class NegapediaModule(BaseModule):
 
         years_to_plot = years
         values_to_plot = values
-        plot_label = f"Historical {type_check.capitalize()} Levels for {title}"
+        plot_label = get_translation("plot_label_historical_levels_for", self.posting_settings['language'], type_check=type_check.capitalize(), title=title)
         plt.plot(years_to_plot, values_to_plot, label=plot_label, color=plot_color, marker="o", linestyle='-')
 
         # Add labels and title
-        plt.xlabel("Year", fontsize=14)
-        plt.ylabel(f"{type_check.capitalize()} level", fontsize=14)
-        plt.title(f"Historical {type_check.capitalize()} Levels for {title}", fontsize=16)
+        x_label = get_translation("x_label_year", self.posting_settings['language'])
+        plt.xlabel(x_label, fontsize=14)
+        y_label = get_translation("type_check_level", self.posting_settings['language'], type_check=type_check.capitalize())
+        plt.ylabel(y_label, fontsize=14)
+        plot_title = get_translation("plot_title_historical_levels_for", self.posting_settings['language'], type_check=type_check.capitalize(), title=title)
+        plt.title(plot_title, fontsize=16)
         plt.legend(fontsize=12)
 
         # Adjust x-axis and y-axis ticks
@@ -529,7 +531,7 @@ class NegapediaModule(BaseModule):
             "image": output_path,
             'image_width': None,
             'image_height': None,
-            'image_alt': f"Historical {type_check.capitalize()} Levels for {title}",
+            'image_alt': get_translation("image_alt_historical_levels_for", self.posting_settings['language'], type_check=type_check.capitalize(), title=title),
             'location': "local",
         })
 
@@ -668,8 +670,7 @@ class NegapediaModule(BaseModule):
 
         return words_that_matter
 
-    @staticmethod
-    def extract_data_awards(type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], url: str, title: str, top_n: int) -> Dict[str, List[str]]:
+    def extract_data_awards(self, type_check: str, negaranks_dict: List[Dict[str, Union[int, str, float]]], url: str, title: str, top_n: int) -> Dict[str, List[str]]:
         """
         Extracts awards from the NEGARANKS data for the specified type (conflict or polemic).
 
@@ -704,51 +705,60 @@ class NegapediaModule(BaseModule):
 
                 # Award: Top 1000 of all time
                 if any(entry['period'] == 'all' and entry['ranking'] <= 1000 for entry in filtered_data):
-                    grouped_awards.setdefault("Top 1000 of all time", []).append("all time")
+                    top_1000_of_all_time_label = get_translation("top_1000_of_all_time_label", self.posting_settings['language'])
+                    grouped_awards.setdefault(top_1000_of_all_time_label, []).append("all time")
 
                 # Award: Top 100 of all time
                 if any(entry['period'] == 'all' and entry['ranking'] <= 100 for entry in filtered_data):
-                    grouped_awards.setdefault("Top 100 of all time", []).append("all time")
+                    top_100_of_all_time_label = get_translation("top_100_of_all_time_label", self.posting_settings['language'])
+                    grouped_awards.setdefault(top_100_of_all_time_label, []).append("all time")
 
                 # Award: Top 1% of all time
                 if any(entry['period'] == 'all' and entry['percentile'] == 100 for entry in filtered_data):
-                    grouped_awards.setdefault("Top 1% of all time", []).append("all time")
+                    top_1_percent_of_all_time_label = get_translation("top_1_percent_of_all_time_label", self.posting_settings['language'])
+                    grouped_awards.setdefault(top_1_percent_of_all_time_label, []).append("all time")
 
                 # Award: First place of the year
                 first_place_years = [entry['period'] for entry in filtered_data if
                                      entry['ranking'] == 1 and entry['period'] != 'all']
                 if first_place_years:
-                    grouped_awards.setdefault("First place of the year", []).extend(first_place_years)
+                    first_place_of_the_year_label = get_translation("first_place_of_the_year_label", self.posting_settings['language'])
+                    grouped_awards.setdefault(first_place_of_the_year_label, []).extend(first_place_years)
 
                 # Award: Third place of the year
                 third_place_years = [entry['period'] for entry in filtered_data if
                                      entry['ranking'] == 3 and entry['period'] != 'all']
                 if third_place_years:
-                    grouped_awards.setdefault("Third place of the year", []).extend(third_place_years)
+                    third_place_of_the_year_label = get_translation("third_place_of_the_year_label", self.posting_settings['language'])
+                    grouped_awards.setdefault(third_place_of_the_year_label, []).extend(third_place_years)
 
                 # Award: Top Ten of the year
                 top_ten_years = [entry['period'] for entry in filtered_data if
                                  entry['ranking'] <= 10 and entry['period'] != 'all']
                 if top_ten_years:
-                    grouped_awards.setdefault("Top Ten of the year", []).extend(top_ten_years)
+                    top_ten_of_the_year_label = get_translation("top_ten_of_the_year_label", self.posting_settings['language'])
+                    grouped_awards.setdefault(top_ten_of_the_year_label, []).extend(top_ten_years)
 
                 # Award: Top 100 of the year
                 top_hundred_years = [entry['period'] for entry in filtered_data if
                                      entry['ranking'] <= 100 and entry['period'] != 'all']
                 if top_hundred_years:
-                    grouped_awards.setdefault("Top 100 of the year", []).extend(top_hundred_years)
+                    top_100_of_the_year_label = get_translation("top_100_of_the_year_label", self.posting_settings['language'])
+                    grouped_awards.setdefault(top_100_of_the_year_label, []).extend(top_hundred_years)
 
                 # Award: Top 1000 of the year
                 top_thousand_years = [entry['period'] for entry in filtered_data if
                                       entry['ranking'] <= 1000 and entry['period'] != 'all']
                 if top_thousand_years:
-                    grouped_awards.setdefault("Top 1000 of the year", []).extend(top_thousand_years)
+                    top_1000_of_the_year_label = get_translation("top_1000_of_the_year_label", self.posting_settings['language'])
+                    grouped_awards.setdefault(top_1000_of_the_year_label, []).extend(top_thousand_years)
 
                 # Award: Top 1% of the year
                 top_one_percent_years = [entry['period'] for entry in filtered_data if
                                          entry['percentile'] == 100 and entry['period'] != 'all']
                 if top_one_percent_years:
-                    grouped_awards.setdefault("Top 1% of the year", []).extend(top_one_percent_years)
+                    top_1_percent_of_the_year_label = get_translation("top_1_percent_of_the_year_label", self.posting_settings['language'])
+                    grouped_awards.setdefault(top_1_percent_of_the_year_label, []).extend(top_one_percent_years)
 
                 # Combine and format the grouped awards
                 for award_type, years in grouped_awards.items():
@@ -823,8 +833,7 @@ class NegapediaModule(BaseModule):
 
         return social_jumps
 
-    @staticmethod
-    def extract_comparison_of_historical_plotted_data(type_check: str, negaranks_dicts: List[List[Dict[str, Union[int, str, float]]]], plot_colors: List[str], urls: List[str], titles: List[str]) -> List[dict]:
+    def extract_comparison_of_historical_plotted_data(self, type_check: str, negaranks_dicts: List[List[Dict[str, Union[int, str, float]]]], plot_colors: List[str], urls: List[str], titles: List[str]) -> List[dict]:
         """
         Extracts and plots comparative historical data for multiple NEGARANKS dictionaries.
 
@@ -860,14 +869,17 @@ class NegapediaModule(BaseModule):
             values = [entry['absolute_value'] for entry in filtered_data]
 
             # Plot data for each topic
-            plot_label = f"Historical {type_check.capitalize()} Levels for {titles[i]}"
+            plot_label = get_translation("plot_label_historical_levels_for", self.posting_settings['language'], type_check=type_check.capitalize(), title=titles[i])
             plot_color = plot_colors[i]
             plt.plot(years, values, label=plot_label, color=plot_color, marker="o", linestyle='-')
 
         # Add labels, title, and legend
-        plt.xlabel("Year", fontsize=14)
-        plt.ylabel(f"{type_check.capitalize()} level", fontsize=14)
-        plt.title(f"Comparison of Historical {type_check.capitalize()} Levels", fontsize=16)
+        x_label = get_translation("x_label_year", self.posting_settings['language'])
+        plt.xlabel(x_label, fontsize=14)
+        y_label = get_translation("type_check_level", self.posting_settings['language'], type_check=type_check.capitalize())
+        plt.ylabel(y_label, fontsize=14)
+        plot_title = get_translation("plot_title_comparison_of_historical_levels", self.posting_settings['language'], type_check=type_check.capitalize())
+        plt.title(plot_title, fontsize=16)
         plt.legend(fontsize=12)
 
         # Adjust x-axis and y-axis ticks
@@ -893,7 +905,7 @@ class NegapediaModule(BaseModule):
             "image": output_path,
             'image_width': None,
             'image_height': None,
-            'image_alt': f"Comparison of Historical {type_check.capitalize()} Levels for Multiple Topics",
+            'image_alt': get_translation("image_alt_comparison_of_historical_levels", self.posting_settings['language'], type_check=type_check.capitalize()),
             'location': "local",
         })
 
