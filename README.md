@@ -206,12 +206,12 @@ To initialize the Facebook connector, you need to populate several environment v
 
 ### Steps to Retrieve Facebook Credentials
 
-1. **Create a Facebook App**:
+#### 1. Create a Facebook App:
    - Visit the [Facebook for Developers](https://developers.facebook.com/apps/?locale=en_US) page.
    - Click on **"Create App"** and follow the prompts to set up your app. This will generate your **`facebook_app_id`** and **`facebook_app_secret`**.
    - You can find these credentials in your app's **Dashboard** under **Settings > Basic**.
 
-2. **Generate a Short-Lived User Access Token and Retrieve the Page ID**:
+#### 2. Generate a Short-Lived User Access Token and Retrieve the Page ID:
    - Go to the [Facebook Graph API Explorer](https://developers.facebook.com/tools/explorer/).
    - Select your app from the dropdown menu.
    - Ensure **"User Token"** is selected under the **User or Page** option.
@@ -231,18 +231,18 @@ To initialize the Facebook connector, you need to populate several environment v
        {
          "access_token": "",
          "category": "",
-         "category_list": [...],
+         "category_list": [""],
          "name": "PAGE_NAME",
          "id": "PAGE_ID",
-         "tasks": [...]
+         "tasks": [""]
        }
-     ]...
+     ]
    }
    ```
    - Copy your id and add it to your `env.json` under `"facebook_page_id"`.
 
 
-   ⚠️ **Warning:** If the long-lived token is not used for approximately 60 days, it may expire and become non-refreshable. In this case, you must clear the existing token from the `env.json` file and [obtain a new short-lived access token](#generate-a-short-lived-user-access-token-and-retrieve-the-page-id) to continue using the tool. ⚠️
+   ⚠️ **Warning:** If the long-lived token is not used for approximately 60 days, it may expire and become non-refreshable. In this case, you must clear the existing token from the `env.json` file and [obtain a new short-lived access token](#2-generate-a-short-lived-user-access-token-and-retrieve-the-page-id) to continue using the tool. ⚠️
 
 ---
 
